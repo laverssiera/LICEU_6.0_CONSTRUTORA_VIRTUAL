@@ -82,7 +82,46 @@ logger.setLevel(getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 BASE_DIR = Path(__file__).resolve().parents[1]
 RAW_REPORTS_DIR = BASE_DIR / "relatorios"
 REPORTS_DIR = RAW_REPORTS_DIR if not RAW_REPORTS_DIR.exists() or RAW_REPORTS_DIR.is_dir() else BASE_DIR / "relatorios_storage"
-EVENT_STORE_STRESS_METRICS_PATH = REPORTS_DIR / "event_store_stress_metrics.jsonl"
+EVENT_STORE_STRESS_METRICS_DIR = REPORTS_DIR / "event_store_stress_metrics"
+
+
+def _event_store_stress_metrics_path(day: str | None = None) -> Path:
+    target_day = day or datetime.now(timezone.utc).date().isoformat()
+    return EVENT_STORE_STRESS_METRICS_DIR / f"{target_day}.jsonl"
+
+
+def _read_event_store_stress_metrics(limit: int, day: str | None = None, only_violations: bool = False) -> list[dict[str, Any]]:
+    metrics: list[dict[str, Any]] = []
+    threshold = 0.01
+
+    if day:
+        candidates = [_event_store_stress_metrics_path(day)]
+    else:
+        if not EVENT_STORE_STRESS_METRICS_DIR.exists():
+            return []
+        candidates = sorted(EVENT_STORE_STRESS_METRICS_DIR.glob("*.jsonl"), reverse=True)
+
+    for path in candidates:
+        if not path.exists():
+            continue
+        try:
+            with path.open("r", encoding="utf-8") as metrics_file:
+                for line in metrics_file:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        item = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if only_violations and float(item.get("loss_rate", 0)) <= threshold:
+                        continue
+                    metrics.append(item)
+        except Exception as exc:
+            logger.warning("Failed to read event-store stress metrics from %s: %s", path, exc)
+
+    metrics.sort(key=lambda entry: entry.get("timestamp", ""), reverse=True)
+    return metrics[:limit]
 
 
 def bootstrap_database() -> bool:
@@ -1539,7 +1578,7 @@ def create_application() -> FastAPI:
 
         integrity = "PASS" if effective_loss_rate <= threshold else "FAIL"
 
-        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        EVENT_STORE_STRESS_METRICS_DIR.mkdir(parents=True, exist_ok=True)
         metric_event = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "events_written": events_written,
@@ -1551,7 +1590,8 @@ def create_application() -> FastAPI:
             "integrity": integrity,
         }
         try:
-            with EVENT_STORE_STRESS_METRICS_PATH.open("a", encoding="utf-8") as metrics_file:
+            metrics_path = _event_store_stress_metrics_path()
+            with metrics_path.open("a", encoding="utf-8") as metrics_file:
                 metrics_file.write(json.dumps(metric_event, ensure_ascii=True) + "\n")
         except Exception as exc:
             logger.warning("Failed to persist event-store stress metric: %s", exc)
@@ -1564,6 +1604,22 @@ def create_application() -> FastAPI:
             "replay": replay_enabled,
             "auto_corrected": auto_corrected,
             "status": "completed",
+        }
+
+    @app.get("/civilization/event-store/stress/metrics")
+    async def civilization_event_store_stress_metrics(
+        limit: int = Query(default=50, ge=1, le=1000),
+        day: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+        only_violations: bool = Query(default=False),
+    ):
+        items = _read_event_store_stress_metrics(limit=limit, day=day, only_violations=only_violations)
+        return {
+            "count": len(items),
+            "limit": limit,
+            "day": day,
+            "only_violations": only_violations,
+            "threshold": 0.01,
+            "items": items,
         }
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
