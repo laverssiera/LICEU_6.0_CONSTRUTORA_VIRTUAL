@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: planetary-federation-runtime
+spec:
+  selector:
+    app: planetary-federation-runtime
+  ports:
+    - protocol: TCP
+      port: 8088
+      targetPort: 8088
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planetary-federation-runtime
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: planetary-federation-runtime
+  template:
+    metadata:
+      labels:
+        app: planetary-federation-runtime
+    spec:
+      containers:
+        - name: planetary-federation-runtime
+          image: liceu/planetary-federation-runtime:latest
+          ports:
+            - containerPort: 8088

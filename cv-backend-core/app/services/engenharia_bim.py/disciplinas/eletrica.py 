@@ -1,0 +1,5 @@
+# disciplinas/eletrica.py
+def dimensionar_fotovoltaico(area_telhado_m2):
+    """Calcula o potencial de geração de energia do imóvel."""
+    geracao_kwh = area_telhado_m2 * 0.15 # Eficiência média
+    return {"geracao_mensal_est": f"{geracao_kwh} kWh", "selo_esg": "ALTO"}

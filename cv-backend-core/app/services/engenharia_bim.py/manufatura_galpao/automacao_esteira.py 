@@ -1,0 +1,6 @@
+# manufatura_galpao/automacao_esteira.py
+def controlar_cura_concreto(sensor_id, temp, umid):
+    """Garante a resistência do concreto via IoT na esteira."""
+    if temp > 45 or umid < 60:
+        return {"valvula_aspersao": "ATIVADA", "msg": "Resfriamento de cura ativo"}
+    return {"status": "CURA_IDEAL_LICEU"}

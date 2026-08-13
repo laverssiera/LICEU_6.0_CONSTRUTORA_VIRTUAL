@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package liceu.core;
+
+// LeadCreated — evento disparado quando John conversa gera um novo lead
+message LeadCreated {
+  string id = 1;                    // UUID do lead
+  string name = 2;                  // Nome do cliente
+  string email = 3;                 // Email de contato
+  string phone = 4;                 // Telefone (opcional)
+  string interest = 5;              // Tipo de interesse: "construction", "investment", "partnership"
+  string source = 6;                // Origem: "site", "whatsapp", "crm_direct"
+  int32 initial_score = 7;          // Score inicial dado por John (0-100)
+  string created_by = 8;            // "john_crm" ou user_id manual
+  string estimated_value = 9;       // Estimativa inicial em reais (string para precisão)
+  string created_at = 10;           // ISO8601 timestamp
+}
+
+// LeadQualified — evento disparado quando John qualifica o lead
+message LeadQualified {
+  string lead_id = 1;
+  int32 final_score = 2;            // Score final após análise
+  string status = 3;                // "qualified", "rejected", "pending_more_info"
+  string assigned_module = 4;       // "OPERA", "CEA", "P&D", etc.
+  string recommendation = 5;        // Recomendação de próximo passo
+  string qualified_at = 6;
+}
+
+// LeadConverted — evento disparado quando lead vira projeto/deal
+message LeadConverted {
+  string lead_id = 1;
+  string project_id = 2;            // ID do projeto criado
+  string deal_id = 3;               // ID do deal/contrato
+  string type = 4;                  // "construction", "investment", "service"
+  string value = 5;                 // Valor final acordado
+  string converted_at = 6;
+}
+
+// CRMInteraction — evento registrado a cada interação John-cliente
+message CRMInteraction {
+  string id = 1;
+  string lead_id = 2;
+  string type = 3;                  // "message", "call", "email", "suggestion"
+  string content = 4;               // Texto da interação
+  string john_response = 5;         // Resposta gerada por John
+  string sentiment = 6;             // "positive", "neutral", "negative"
+  string timestamp = 7;
+}

@@ -1,0 +1,8 @@
+ manufatura_galpao/agv_logistica.py
+def mover_kit_para_expedicao(id_kit, doca):
+    """Comanda o robô autônomo (AGV) para levar o kit ao caminhão."""
+    return {
+        "agv_id": "ROBO-01",
+        "rota_interna": f"SALA_CURA -> DOCA_{doca}",
+        "bateria": "85%",
+        "obstaculos": "Zero_Detectado"

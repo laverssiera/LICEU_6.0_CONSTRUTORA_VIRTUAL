@@ -1,0 +1,11 @@
+# disciplinas/estrutura.py
+def calcular_consumo_industrial(geometria_bim):
+    """Calcula peso de aço e volume de concreto para a Fábrica."""
+    volume_m3 = geometria_bim.get('volume', 0)
+    taxa_aco_m3 = 85  # kg/m3 (Padrão Liceu)
+    return {
+        "concreto_total": f"{volume_m3} m3",
+        "aco_total": f"{volume_m3 * taxa_aco_m3} kg",
+        "status": "VALIDADO_LICEU_6.0"
+    }
+

@@ -1,0 +1,42 @@
+def processar_projeto_ppci(id_projeto, area_m2, classificacao_risco):
+    """
+    Motor de Prevenção e Combate a Incêndio (PPCI).
+    Gera o quantitativo para o Orçamento e os procedimentos para a Qualidade.
+    """
+    # 1. Parâmetros de Projeto (Baseados em Instruções Técnicas dos Bombeiros)
+    normas_it = {
+        "extintores": 1 / 200, # 1 extintor a cada 200m²
+        "iluminacao_emergencia": 1 / 15, # 1 luminária a cada 15m
+        "sinalizacao_saida": "Obrigatória em todas as rotas de fuga"
+    }
+
+    # 2. Cálculo de Insumos (O Orçamento recebe o dado exato)
+    qtd_extintores = round(area_m2 * normas_it["extintores"])
+    qtd_luminarias = round(area_m2 * normas_it["iluminacao_emergencia"])
+    
+    # 3. Procedimento de Qualidade (Procedimento Operacional Padrão - POP)
+    procedimento_instalacao = "POP_PPCI_01_TESTE_ESTANQUEIDADE_HIDRANTES"
+    
+    return {
+        "projeto_id": id_projeto,
+        "risco": classificacao_risco,
+        "materiais_orcamento": {
+            "extintores_pqs": qtd_extintores,
+            "luminarias_led": qtd_luminarias,
+            "botoeiras_alarme": 2 # Mínimo por andar/setor
+        },
+        "procedimento_qualidade": procedimento_instalacao,
+        "custo_estimado": f"R$ {round(qtd_extintores * 250 + qtd_luminarias * 45, 2)}",
+        "validacao_norma": "NBR 17240 / IT-BOMBEIROS"
+    }
+
+def validar_seguranca_ativa(automacao_ativa):
+    """
+    Integra com o depto de Automação para garantir o desligamento
+    automático de gás e energia em caso de fumaça detectada.
+    """
+    return {
+        "status": "CONFORME ✅" if automacao_ativa else "RISCO ⚠️",
+        "acao": "Intertravar válvulas de gás com sensor de fumaça IoT",
+        "beneficio_seguro": "Redução de prêmio de seguro SPE"
+    }

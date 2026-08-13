@@ -1,0 +1,128 @@
+# Federation Runtime Soberano Global
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: federation-runtime
+  labels:
+    app: federation-runtime
+    region: europe
+    sovereign: "true"
+    agi-infra: "civilization-scale"
+  annotations:
+    agi.sovereign/consensus: "federation"
+    agi.sovereign/topology: "europe"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: federation-runtime
+  template:
+    metadata:
+      labels:
+        app: federation-runtime
+        region: europe
+        sovereign: "true"
+      annotations:
+        agi.sovereign/consensus: "federation"
+        agi.sovereign/topology: "europe"
+    spec:
+      priorityClassName: agi-critical
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        allowPrivilegeEscalation: false
+      containers:
+      - name: federation-runtime
+        image: liceu/federation-runtime:latest
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        env:
+        - name: REGION
+          value: "europe"
+        - name: SOVEREIGN_MODE
+          value: "true"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - federation-runtime
+            topologyKey: "kubernetes.io/hostname"
+      tolerations:
+      - key: "critical"
+        operator: "Exists"
+        effect: "NoSchedule"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: federation-runtime-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: federation-runtime
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: federation-runtime-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: federation-runtime
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: federation-runtime-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: federation-runtime
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          sovereign: "true"
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          sovereign: "true"

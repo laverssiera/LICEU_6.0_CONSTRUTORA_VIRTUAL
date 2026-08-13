@@ -1,0 +1,125 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: liceu_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  nats:
+    image: nats:2
+    container_name: liceu_nats
+    ports:
+      - "4222:4222"
+
+  gateway:
+    build: ./gateway
+    container_name: liceu_gateway
+    environment:
+      NATS_URL: ${NATS_URL}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - nats
+      - liceu_core
+      - backend
+      - john_engine
+
+  backend:
+    build: ./backend
+    container_name: liceu_backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    ports:
+      - "8010:8000"
+    depends_on:
+      - postgres
+      - nats
+
+  liceu_core:
+    build: ./liceu_core
+    container_name: liceu_core
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  opera:
+    build: ./opera
+    container_name: liceu_opera
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  hub:
+    build: ./hub
+    container_name: liceu_hub
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  audit_hospital:
+    build: ./audit_hospital
+    container_name: liceu_audit_hospital
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  pd:
+    build: ./pd
+    container_name: liceu_pd
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  fornecedores:
+    build: ./fornecedores
+    container_name: liceu_fornecedores
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  john_engine:
+    build: ./john_engine
+    container_name: liceu_john_engine
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NATS_URL: ${NATS_URL}
+    depends_on:
+      - postgres
+      - nats
+
+  frontend:
+    build: ./frontend
+    container_name: liceu_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gateway
+
+volumes:
+  postgres_data:

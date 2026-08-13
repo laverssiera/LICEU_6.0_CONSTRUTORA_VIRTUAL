@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: federation-runtime
+spec:
+  selector:
+    app: federation-runtime
+  ports:
+    - protocol: TCP
+      port: 8091
+      targetPort: 8091
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: federation-runtime
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: federation-runtime
+  template:
+    metadata:
+      labels:
+        app: federation-runtime
+    spec:
+      containers:
+        - name: federation-runtime
+          image: liceu/federation-runtime:latest
+          ports:
+            - containerPort: 8091

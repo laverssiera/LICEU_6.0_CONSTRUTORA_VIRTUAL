@@ -1,0 +1,27 @@
+isciplinas/seguranca_trabalho.py
+def checklist_nr18_digital():
+    """Automação da segurança para evitar acidentes e processos."""
+    return {
+        "epcs_obrigatorios": ["Linha de Vida", "Guarda-corpo"],
+        "treinamento_irmandade": "VALIDADO ✅"
+
+def planejar_seguranca_bim(id_projeto, riscos_detectados):
+    """
+    Gera o PCMAT digital direto do modelo 3D. 
+    Se o BIM mostra trabalho em altura, o Orçamento já provisiona a linha de vida.
+    """
+    custo_seguranca = 0
+    procedimentos_qualidade = []
+
+    for risco in riscos_detectados:
+        # Prevenção Ativa: EPCs projetados
+        if risco['tipo'] == "ALTURA":
+            procedimentos_qualidade.append("INSTALAÇÃO_LINHA_VIDA_NORMA_NR35")
+            custo_seguranca += (risco['perimetro_m'] * 45.0) # R$ 45/m de cabo de aço
+
+    return {
+        "status": "COMPLIANCE_NR18",
+        "orcamento_seguranca": round(custo_seguranca, 2),
+        "procedimentos_obrigatorios": procedimentos_qualidade,
+        "treinamento_necessario": "Certificação_Irmandade_Nivel_1"
+    }

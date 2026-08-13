@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cores de Autoridade: Cinza Profundo e Vermelho Técnico */
+    --liceu-taupe: 74, 69, 66;    /* #4a4542 - Seriedade Terrawe */
+    --liceu-accent: 197, 48, 48;   /* #c53030 - Força Cyrela */
+    --liceu-bg: 253, 252, 251;     /* #fdfcfb - Branco Acolhedor */
+  }
+
+  body {
+    /* Tipografia: Serif para acolhimento, Sans para dados */
+    @apply bg-[#fdfcfb] text-[#2a2a2a] antialiased;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Playfair Display', serif; /* O toque de luxo da Cyrela */
+  }
+}
+
+@layer components {
+  /* Botão "Dubai": Sólido, imponente, sem bordas arredondadas infantis */
+  .btn-liceu-primary {
+    @apply bg-[#4a4542] text-white px-10 py-5 rounded-none font-bold uppercase tracking-[0.3em] text-[10px]
+           hover:bg-[#c53030] transition-all duration-500 shadow-2xl;
+  }
+
+  /* Botão "Terrawe": Minimalista, apenas linha */
+  .btn-liceu-outline {
+    @apply border border-[#2a2a2a]/20 text-[#2a2a2a] px-10 py-5 rounded-none font-bold uppercase tracking-[0.3em] text-[10px]
+           hover:bg-[#2a2a2a] hover:text-white transition-all duration-700;
+  }
+
+  /* Card de Operação: Sombra leve, bordas retas, fundo limpo */
+  .operation-card {
+    @apply bg-white border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-none p-12;
+  }
+
+  /* Mega Menu Dropdown */
+  .mega-menu-content {
+    @apply absolute hidden group-hover:block bg-white text-[#2a2a2a] w-72 p-8 
+           shadow-[0_30px_60px_rgba(0,0,0,0.1)] z-50 border-t-2 border-[#c53030] 
+           animate-in fade-in slide-in-from-top-2;
+  }
+}
+
+/* Scrollbar Minimalista (Invisível até o uso) */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #fdfcfb; }
+::-webkit-scrollbar-thumb { background: #4a4542; }
+::-webkit-scrollbar-thumb:hover { background: #c53030; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn-liceu-primary {
+    @apply py-4 px-8 font-bold uppercase text-[10px] tracking-[0.3em] transition-all duration-300 border border-transparent;
+    @apply bg-[#4a4542] text-white hover:bg-[#c53030] active:scale-95 shadow-lg;
+  }
+
+  .btn-liceu-outline {
+    @apply py-4 px-8 font-bold uppercase text-[10px] tracking-[0.3em] transition-all duration-300 border border-[#4a4542]/20;
+    @apply text-[#4a4542] hover:border-[#c53030] hover:text-[#c53030] active:scale-95;
+  }
+}

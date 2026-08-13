@@ -1,0 +1,5 @@
+# Regras operacionais de governança
+# Exemplo:
+- id: OPR001
+  name: Operação restrita fora do horário
+  action: require_approval

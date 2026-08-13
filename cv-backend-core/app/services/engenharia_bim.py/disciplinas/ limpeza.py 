@@ -1,0 +1,18 @@
+def cronograma_limpeza_pos_obra(tipo_unidade):
+    """
+    Define os protocolos de entrega técnica e remoção de resíduos industriais.
+    Essencial para o checklist de entrega do Jurídico.
+    """
+    protocolo = [
+        "Remoção de películas de proteção (caixilhos)",
+        "Limpeza técnica de vidros (interno/externo)",
+        "Higienização de dutos de climatização",
+        "Teste de estanqueidade de ralos e sanitários"
+    ]
+    
+    return {
+        "status_entrega": "PROTOCOLO_LICEU_OPEN",
+        "etapas_obrigatorias": protocolo,
+        "garantia_limpeza": "Selo de Entrega Impecável",
+        "plano_manutencao_fachada": "Semestral (Sugerido via App)"
+    }

@@ -1,0 +1,9 @@
+{
+  "manifests": ["global_manifest_2026"],
+  "topology_atlases": ["topology_atlas_2026"],
+  "cognition_atlases": ["cognition_atlas_2026"],
+  "governance_atlases": ["governance_atlas_2026"],
+  "evolution_atlases": ["evolution_atlas_2026"],
+  "continuity_atlases": ["continuity_atlas_2026"],
+  "timestamp": "2026-05-18"
+}

@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Federation Mesh",
+    "panels": [
+      {"type": "graph", "title": "Federation Mesh Health", "targets": [{"expr": "federation_mesh_health"}]},
+      {"type": "graph", "title": "Federation Traffic", "targets": [{"expr": "federation_traffic"}]}
+    ]
+  }
+}

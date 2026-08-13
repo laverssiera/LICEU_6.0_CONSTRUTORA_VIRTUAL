@@ -1,0 +1,16 @@
+def sincronizar_arquitetura_engenharia(id_projeto, versao_bim):
+    """
+    Detecta mudanças na arquitetura (ex: moveu uma parede) e 
+    dispara o recálculo de cargas e a nova ordem de produção.
+    """
+    # Lógica de detecção de alteração de geometria
+    mudanca_detectada = True 
+    
+    if mudanca_detectada:
+        return {
+            "status": "SINCRONIZAÇÃO_NECESSÁRIA 🔄",
+            "impacto_orcamento": "R$ +1.500,00",
+            "impacto_estrutura": "Recalculando ferragens em disciplinas/estrutura.py",
+            "autorizacao_diretor": "PENDENTE"
+        }
+    return {"status": "VERSÕES_EM_CONFORMIDADE ✅"}

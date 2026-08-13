@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: liceu-core-schemas
+Version: 0.1.0
+Summary: Schema Registry global do ecossistema Liceu 6.0
+Requires-Python: >=3.11
+Requires-Dist: pydantic<3,>=2

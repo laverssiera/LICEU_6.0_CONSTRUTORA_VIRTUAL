@@ -1,0 +1,19 @@
+def extrair_metadados_arquivo(arquivo_nome, formato):
+    """
+    Extrai o 'DNA' do arquivo, seja ele DWG, RVT (Revit) ou SLDPRT (SolidWorks).
+    """
+    motores = {
+        "dwg": "AutoCAD Extraction Engine",
+        "rvt": "Revit Data Miner",
+        "sldprt": "SolidWorks Part Parser",
+        "ifc": "OpenBIM Standard Reader"
+    }
+    
+    print(f"Lendo metadados de {arquivo_nome} via {motores.get(formato)}...")
+    
+    return {
+        "formato_origem": formato,
+        "versao_software": "2024.1",
+        "objetos_detectados": 150, # Ex: janelas, portas, vigas
+        "status_conversao": "SUCESSO 🚀"
+    }

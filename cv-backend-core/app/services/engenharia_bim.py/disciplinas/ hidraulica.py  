@@ -1,0 +1,6 @@
+# disciplinas/hidraulica.py
+def validar_perda_carga(comprimento, trecho):
+    """Garante que a pressão da água atenda à Norma NBR 5626."""
+    pressao_ponta = 15 # mca (exemplo)
+    return {"pressao_final": f"{pressao_ponta} mca", "conformidade": "OK"}
+

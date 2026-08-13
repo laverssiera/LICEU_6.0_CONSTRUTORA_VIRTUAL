@@ -1,0 +1,6 @@
+# disciplinas/fundacao.py
+def analisar_sondagem_spt(golpes_spt):
+    """Cruza o laudo de sondagem com a carga do BIM."""
+    if golpes_spt < 10:
+        return {"tipo_fundacao": "Estaca Profunda", "alerta": "Solo Mole Detectado"}
+    return {"tipo_fundacao": "Sapata/Radier", "custo_otimizado": True}

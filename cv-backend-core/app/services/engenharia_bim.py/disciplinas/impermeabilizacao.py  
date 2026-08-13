@@ -1,0 +1,4 @@
+# disciplinas/impermeabilizacao.py
+def plano_estanqueidade(tipo_laje):
+    """Garante que o ponto crítico de infiltração seja zero."""
+    return {"sistema": "Manta Asfáltica 4mm Aluminizada", "garantia": "10 anos"}

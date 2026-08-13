@@ -1,0 +1,70 @@
+version: '3.8'
+services:
+  neo4j:
+    image: neo4j:5
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO4J_AUTH=neo4j/test
+    volumes:
+      - neo4j_data:/data
+  redis:
+    image: redis:7
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+  nats:
+    image: nats:2
+    ports:
+      - 4222:4222
+      - 8222:8222
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: liceu
+    ports:
+      - 5432:5432
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+  loki:
+    image: grafana/loki
+    ports:
+      - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+  tempo:
+    image: grafana/tempo
+    ports:
+      - 3200:3200
+  jaeger:
+    image: jaegertracing/all-in-one
+    ports:
+      - 16686:16686
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 14268:14268
+      - 14250:14250
+      - 9411:9411
+volumes:
+  neo4j_data:
+  redis_data:
+  pg_data:
+  grafana_data:

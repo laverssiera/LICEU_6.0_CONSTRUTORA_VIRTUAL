@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Runtime Graph",
+    "panels": [
+      {"type": "graph", "title": "Graph Node Count", "targets": [{"expr": "graph_node_count"}]},
+      {"type": "graph", "title": "Graph Federation Events", "targets": [{"expr": "graph_federation_events"}]}
+    ]
+  }
+}

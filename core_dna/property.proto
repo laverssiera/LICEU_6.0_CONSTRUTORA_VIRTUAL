@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package liceu.core;
+
+message Property {
+  string id = 1;
+  string title = 2;
+  string type = 3;
+  double price = 4;
+  double rent_value = 5;
+  double area = 6;
+  string location = 7;
+  string owner_id = 8;
+  string status = 9;
+  string created_at = 10;
+}

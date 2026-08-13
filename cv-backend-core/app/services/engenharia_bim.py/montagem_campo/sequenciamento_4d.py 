@@ -1,0 +1,20 @@
+def obter_proximo_passo_montagem(id_projeto, etapa_atual):
+    """
+    Consulta o BIM 4D para indicar a próxima peça na sequência lógica.
+    Evita que o montador tente colocar a parede antes da fundação estar pronta.
+    """
+    # Lista simulada vinda do cronograma BIM
+    cronograma = [
+        {"etapa": 1, "peça": "FUNDACAO_01", "local": "EIXO_A1"},
+        {"etapa": 2, "peça": "PAREDE_ESTRUTURAL_01", "local": "EIXO_A1"},
+        {"etapa": 3, "peça": "KIT_HIDRAULICO_01", "local": "BANHEIRO_01"}
+    ]
+    
+    proxima = next((item for item in cronograma if item["etapa"] > etapa_atual), None)
+    
+    return {
+        "projeto": id_projeto,
+        "instrucao": f"MONTE AGORA: {proxima['peça']}" if proxima else "OBRA CONCLUÍDA ✅",
+        "localizacao_bim": proxima['local'] if proxima else None,
+        "manual_montagem_url": f"https://liceu.io{proxima['peça']}.pdf" if proxima else None
+    }

@@ -1,0 +1,11 @@
+def gerar_dna_peca(id_peca, dados_qualidade):
+    """
+    Vincula o teste de resistência do concreto e a data de cura ao QR Code.
+    Sem QR Code validado, o Financeiro não libera o pagamento da equipe.
+    """
+    return {
+        "qr_content": f"https://api.liceu.com{id_peca}",
+        "status_qualidade": dados_qualidade['status'], # Ex: 'Aprovado_Cura_7_Dias'
+        "responsavel_tecnico": "Eng_Liceu_IA",
+        "bloqueio_logistica": not dados_qualidade['aprovado']
+    }

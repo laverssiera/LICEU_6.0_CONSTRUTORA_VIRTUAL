@@ -1,0 +1,6 @@
+# Regras financeiras de governança
+# Exemplo:
+- id: FIN001
+  name: Limite de aprovação financeira
+  threshold: 1000000
+  action: require_approval

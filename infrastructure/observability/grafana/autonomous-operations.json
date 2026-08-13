@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Autonomous Operations",
+    "panels": [
+      {"type": "graph", "title": "Autonomous Actions", "targets": [{"expr": "autonomous_actions"}]},
+      {"type": "graph", "title": "Self-Healing Events", "targets": [{"expr": "self_healing_events"}]}
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Liceu 6.0 | Construtora Virtual</title>
+    
+    <!-- Script Tailwind para garantir renderização imediata -->
+    <script src="https://tailwindcss.com"></script>
+    
+    <!-- Fontes de Luxo: Playfair (Acolhimento) e Inter (Precisão) -->
+    <link href="https://googleapis.com" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="antialiased bg-[#fdfcfb]">
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+<!-- No <head> do seu index.html -->
+<script type="module" src="https://googleapis.com"></script>
+

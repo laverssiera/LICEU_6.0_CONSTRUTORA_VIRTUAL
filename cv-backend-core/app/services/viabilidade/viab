@@ -1,0 +1,164 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.viabilidade import EstudoViabilidade
+from app.services.viabilidade.financeiro import calcular_viabilidade_financeira, analisar_pontos_criticos
+from app.services.viabilidade.urbanismo import processar_estudo_urbanistico
+from app.services.viabilidade.report_generator import EVTLReport
+from pydantic import BaseModel
+from typing import List
+
+router = APIRouter(prefix="/viabilidade", tags=["EVTL"])
+
+# --- SCHEMAS (Validação de Dados) ---
+class EstudoEntrada(BaseModel):
+    endereco: str
+    area_terreno: float
+    valor_terreno: float
+    valor_venda_m2: float
+    custo_obra_m2: float
+    matricula: str
+
+# --- ROTA 1: GERAR ESTUDO (POST) ---
+@router.post("/gerar-evtl/")
+async def gerar_evtl(dados: EstudoEntrada, db: Session = Depends(get_db)):
+    try:
+        # 1. MOTOR URBANÍSTICO: Busca Geográfica + GeoSampa
+        info_urbana = processar_estudo_urbanistico(dados.endereco, dados.area_terreno)
+        
+        if "erro" in info_urbana:
+            raise HTTPException(status_code=400, detail=info_urbana["erro"])
+
+        # 2. MOTOR FINANCEIRO
+        res_fin = calcular_viabilidade_financeira(
+            area_construida_estimada=info_urbana["potencial_construtivo"],
+            valor_venda_m2=dados.valor_venda_m2,
+            custo_obra_m2=dados.custo_obra_m2,
+            valor_terreno=dados.valor_terreno
+        )
+
+        # 3. ANÁLISE DE RISCO
+        res_criticos = analisar_pontos_criticos(res_fin, zoneamento=info_urbana["zona"])
+
+        # 4. SALVAR NA MASSA DE DADOS (PostgreSQL)
+        novo_estudo = EstudoViabilidade(
+            matricula=dados.matricula,
+            cep=dados.endereco,
+            vgv=res_fin['vgv'],
+            pontos_criticos=res_criticos,
+            status_decisao=res_fin['classificacao'],
+            lat=info_urbana["latitude"],
+            lng=info_urbana["longitude"],
+            zona_detectada=info_urbana["zona"] # Importante para o Mapa!
+        )
+        db.add(novo_estudo)
+        db.commit()
+
+        # 5. RELATÓRIO PDF
+        filename = f"relatorios/EVTL_{dados.matricula}.pdf"
+        EVTLReport().create_report(res_fin, res_criticos, filename)
+
+        return {
+            "status": "Sucesso",
+            "zona_detectada": info_urbana["zona"],
+            "potencial_m2": info_urbana["potencial_construtivo"],
+            "classificacao": res_fin['classificacao'],
+            "pdf_url": f"/baixar-pdf/EVTL_{dados.matricula}.pdf",
+            "financeiro": res_fin
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
+# --- ROTA 2: LISTAR PARA O MAPA (GET) ---
+@router.get("/listar-estudos/", response_model=List[dict])
+async def listar_estudos_viabilidade(db: Session = Depends(get_db)):
+    """
+    Busca todos os terrenos analisados para plotar no mapa do Vue.js.
+    """
+    estudos = db.query(EstudoViabilidade).all()
+    
+    return [
+        {
+            "id": e.id,
+            "cep": e.cep,
+            "lat": e.lat,
+            "lng": e.lng,
+            "zona_detectada": e.zona_detectada,
+            "vgv": e.vgv,
+            "status_decisao": e.status_decisao,
+            "pdf_url": f"/baixar-pdf/EVTL_{e.matricula}.pdf"
+        }
+        for e in estudos
+    ]
+from sqlalchemy import func
+
+@router.get("/estatisticas/")
+async def obter_estatisticas(db: Session = Depends(get_db)):
+    """
+    Consolida os números do ecossistema Liceu para o Dashboard.
+    """
+    total_estudos = db.query(EstudoViabilidade).count()
+    vgv_total = db.query(func.sum(EstudoViabilidade.vgv)).scalar() or 0
+    
+    # Conta quantos terrenos por status
+    viaveis = db.query(EstudoViabilidade).filter(EstudoViabilidade.status_decisao.contains("VIÁVEL")).count()
+    inviaveis = db.query(EstudoViabilidade).filter(EstudoViabilidade.status_decisao.contains("INVIÁVEL")).count()
+    
+    return {
+        "total_analises": total_estudos,
+        "vgv_total_mapeado": round(vgv_total, 2),
+        "taxa_viabilidade": f"{round((viaveis/total_estudos)*100, 1)}%" if total_estudos > 0 else "0%",
+        "distribuicao": {
+            "viaveis": viaveis,
+            "inviaveis": inviaveis,
+            "marginais": total_estudos - viaveis - inviaveis
+        }
+    }
+# No seu arquivo de modelos, adicione:
+class EstudoViabilidade(Base):
+    # ... colunas anteriores (id, cep, vgv...)
+    score_compliance = Column(Integer, default=0)
+    documentos_json = Column(JSON, default={}) # Guarda o checklist: {"matricula": True, ...}
+    tem_afetacao = Column(Boolean, default=False)
+class CheckDocumento(BaseModel):
+    id_estudo: int
+    documentos: dict # Ex: {"matricula_atualizada": True}
+
+@router.post("/atualizar-compliance/")
+async def atualizar_compliance(dados: CheckDocumento, db: Session = Depends(get_db)):
+    estudo = db.query(EstudoViabilidade).filter(EstudoViabilidade.id == dados.id_estudo).first()
+    if not estudo:
+        raise HTTPException(status_code=404, detail="Estudo não encontrado")
+    
+    # Atualiza o JSON de documentos
+    estudo.documentos_json.update(dados.documentos)
+    
+    # Recalcula o Score
+    resultado = calcular_compliance_spe(estudo.documentos_json)
+    estudo.score_compliance = resultado["score"]
+    
+    db.commit()
+    return resultado
+from app.services.juridico.contratos import GeradorContratoLiceu
+
+@router.get("/gerar-contrato/{id_estudo}")
+async def emitir_contrato_spe(id_estudo: int, investidor: str, db: Session = Depends(get_db)):
+    estudo = db.query(EstudoViabilidade).filter(EstudoViabilidade.id == id_estudo).first()
+    
+    # TRAVA JURÍDICA: Só gera se o score for 100
+    if estudo.score_compliance < 100:
+        raise HTTPException(status_code=403, detail="Compliance insuficiente para gerar contrato.")
+
+    dados_contrato = {
+        "matricula": estudo.matricula,
+        "cep": estudo.cep,
+        "vgv": estudo.vgv,
+        "investimento_total": estudo.investimento_total
+    }
+    
+    filename = f"relatorios/CONTRATO_SPE_{estudo.id}.pdf"
+    GeradorContratoLiceu().criar_minuta_spe(dados_contrato, investidor, filename)
+    
+    return {"status": "Contrato Gerado", "url": f"/baixar-pdf/CONTRATO_SPE_{estudo.id}.pdf"}
+
+

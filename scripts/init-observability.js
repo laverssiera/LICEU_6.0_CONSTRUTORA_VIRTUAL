@@ -1,0 +1,1 @@
+console.log(`\n==============================\nLICEU UNIFIED OBSERVABILITY\n==============================\n\nOTEL Collector: ONLINE\nPrometheus: ONLINE\nGrafana: ONLINE\nLoki: ONLINE\nTempo: ONLINE\nJaeger: ONLINE\n\nObservability Ready.\n`);

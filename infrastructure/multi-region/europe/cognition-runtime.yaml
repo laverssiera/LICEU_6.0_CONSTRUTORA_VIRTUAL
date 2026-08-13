@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cognition-runtime
+  labels:
+    app: cognition-runtime
+    region: europe
+    runtime.liceu.ai/type: cognition
+    runtime.liceu.ai/region: europe
+    runtime.liceu.ai/sovereignty: sovereign
+    runtime.liceu.ai/cognition: enabled
+    runtime.liceu.ai/federation: enabled
+    tracing: enabled
+    federation: enabled
+  annotations:
+    tracing.opentelemetry/enabled: "true"
+    federation.runtime/enabled: "true"
+    sovereign.runtime/criticality: "critical"
+    cognition.runtime/priority: "high"
+    planetary.runtime/sync: "enabled"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cognition-runtime
+      region: europe
+  template:
+    metadata:
+      labels:
+        app: cognition-runtime
+        region: europe
+        runtime.liceu.ai/type: cognition
+        runtime.liceu.ai/region: europe
+        runtime.liceu.ai/sovereignty: sovereign
+        runtime.liceu.ai/cognition: enabled
+        runtime.liceu.ai/federation: enabled
+        tracing: enabled
+        federation: enabled
+      annotations:
+        tracing.opentelemetry/enabled: "true"
+        federation.runtime/enabled: "true"
+        sovereign.runtime/criticality: "critical"
+        cognition.runtime/priority: "high"
+        planetary.runtime/sync: "enabled"
+    spec:
+      containers:
+        - name: cognition-runtime
+          image: liceu/cognition-runtime:latest
+          ports:
+            - containerPort: 8090
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8090
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8090
+            failureThreshold: 30
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 20"]
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/region
+                    operator: In
+                    values: ["europe"]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values: ["cognition-runtime"]
+              topologyKey: "kubernetes.io/hostname"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: cognition-runtime
+      automountServiceAccountToken: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cognition-runtime
+  labels:
+    region: europe
+spec:
+  selector:
+    app: cognition-runtime
+    region: europe
+  ports:
+    - protocol: TCP
+      port: 8090
+      targetPort: 8090

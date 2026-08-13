@@ -1,0 +1,22 @@
+### Health
+GET http://localhost:8010/health
+Accept: application/json
+
+### Criar negocio
+POST http://localhost:8010/business/
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Empreendimento 20 casas",
+  "portfolio": "Obras Comuns",
+  "program": "Residencial",
+  "stage": "Ideia",
+  "estimated_cost": 2000000,
+  "expected_return": 3200000
+}
+
+### Aprovar negocio
+# Substitua BUSINESS_ID pelo ID retornado no request anterior
+POST http://localhost:8010/business/BUSINESS_ID/approve
+Accept: application/json

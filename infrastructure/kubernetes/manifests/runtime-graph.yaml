@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: runtime-graph
+spec:
+  selector:
+    app: runtime-graph
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runtime-graph
+  labels:
+    app: runtime-graph
+    tracing: enabled
+    federation: enabled
+  annotations:
+    sovereign-runtime: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: runtime-graph
+  template:
+    metadata:
+      labels:
+        app: runtime-graph
+        tracing: enabled
+        federation: enabled
+      annotations:
+        sovereign-runtime: "true"
+    spec:
+      containers:
+        - name: runtime-graph
+          image: liceu/runtime-graph:latest
+          ports:
+            - containerPort: 8083
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      automountServiceAccountToken: true

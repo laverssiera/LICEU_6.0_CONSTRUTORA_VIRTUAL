@@ -1,0 +1,13 @@
+def calcular_score_projeto_cx(id_cliente, nps_anterior, churn_risk):
+    """
+    Cruza o histórico do cliente com a complexidade do projeto.
+    Se o risco de Churn (desistência) for alto, o sistema sugere upgrade gratuito.
+    """
+    if churn_risk > 0.7:
+        return {
+            "estrategia": "RETENÇÃO_MÁXIMA",
+            "acao": "Oferecer Kit Automação IoT como bônus no projeto",
+            "fator_uau": "Visualização em VR (Realidade Virtual) liberada"
+        }
+    
+    return {"status": "FLUXO_PADRAO", "nps_alvo": 90}

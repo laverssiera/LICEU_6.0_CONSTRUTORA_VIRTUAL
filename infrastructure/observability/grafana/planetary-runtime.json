@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Planetary Runtime",
+    "panels": [
+      {"type": "graph", "title": "Edge Node Count", "targets": [{"expr": "edge_node_count"}]},
+      {"type": "graph", "title": "Planetary Federation Events", "targets": [{"expr": "planetary_federation_events"}]}
+    ]
+  }
+}

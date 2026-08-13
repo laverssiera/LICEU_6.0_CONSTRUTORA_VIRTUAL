@@ -1,0 +1,5 @@
+# disciplinas/maquinas.py
+def oee_maquina(tempo_ativo, total_pecas):
+    """Calcula a Eficiência Global do Equipamento no Galpão."""
+    eficiencia = (total_pecas / tempo_ativo) * 100
+    return {"eficiencia_oee": f"{eficiencia}%", "manutencao_preventiva": "Em dia"}
