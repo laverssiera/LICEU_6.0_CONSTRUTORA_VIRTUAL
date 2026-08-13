@@ -1,0 +1,14 @@
+def calcular_paginacao_industrial(area_m2, dimensao_peca_mm):
+    """
+    Define a ordem de assentamento no BIM. 
+    O orçamentista recebe a quantidade exata de peças, não m².
+    """
+    pecas_inteiras = int(area_m2 / (dimensao_peca_mm[0]/1000 * dimensao_peca_mm[1]/1000))
+    quebra_tecnica = pecas_inteiras * 0.02 # Apenas 2% (DNA Liceu)
+
+    return {
+        "pecas_totais": pecas_inteiras + int(quebra_tecnica),
+        "procedimento_qualidade": "PAGINACAO_SENTIDO_UNICO_LASER",
+        "insumo_argamassa_kg": area_m2 * 5.5, # Kg fixo por m²
+        "alerta_improviso": "PROIBIDO_CORTE_MANUAL_SEM_GABARITO"
+    }

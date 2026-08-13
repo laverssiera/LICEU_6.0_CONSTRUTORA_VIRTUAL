@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package liceu.events;
+
+enum EventVersion {
+  EVENT_VERSION_UNSPECIFIED = 0;
+  EVENT_VERSION_V1 = 1;
+  EVENT_VERSION_V2 = 2;
+}
+
+enum CanonicalEventType {
+  CANONICAL_EVENT_TYPE_UNSPECIFIED = 0;
+  // key: lead.created
+  // versions: v1,v2
+  LEAD_CREATED = 1;
+  // key: match.generated
+  // versions: v1,v2
+  MATCH_GENERATED = 2;
+  // key: deal.closed
+  // versions: v1,v2
+  DEAL_CLOSED = 3;
+  // key: proposal.sent
+  // versions: v1,v2
+  PROPOSAL_SENT = 9;
+  // key: contract.created
+  // versions: v1,v2
+  CONTRACT_CREATED = 4;
+  // key: contract.signed
+  // versions: v1,v2
+  CONTRACT_SIGNED = 5;
+  // key: commission.protected
+  // versions: v1,v2
+  COMMISSION_PROTECTED = 6;
+  // key: payment.generated
+  // versions: v1,v2
+  PAYMENT_GENERATED = 7;
+  // key: campaign.triggered
+  // versions: v1,v2
+  CAMPAIGN_TRIGGERED = 8;
+}
+
+message CanonicalEventSpec {
+  CanonicalEventType canonical_type = 1;
+  string event_key = 2;
+  repeated EventVersion supported_versions = 3;
+}
+
+message Event {
+  string id = 1;
+  string type = 2;
+  EventVersion version = 3;
+  string source = 4;
+  string timestamp = 5;
+  map<string, string> payload = 6;
+}

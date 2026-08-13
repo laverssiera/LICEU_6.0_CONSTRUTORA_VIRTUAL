@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package liceu.governance;
+
+message GovernanceDecision {
+  string id = 1;
+  string event_id = 2;
+  bool approved = 3;
+  string reason = 4;
+  string risk = 5;
+  bool required_approval = 6;
+  string timestamp = 7;
+}

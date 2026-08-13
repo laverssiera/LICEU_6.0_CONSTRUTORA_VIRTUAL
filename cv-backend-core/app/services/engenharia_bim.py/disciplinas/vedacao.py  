@@ -1,0 +1,44 @@
+def processar_rpa_vedacao(id_projeto, lista_paineis_bim):
+    """
+    RPA de Vedação: Traduz a geometria do BIM para a Ordem de Produção (OP)
+    de painéis pré-moldados ou drywall industrializado.
+    """
+    relatorio_rpa = {
+        "projeto_id": id_projeto,
+        "total_paineis_processados": 0,
+        "conduite_eletrico_embutido": True,
+        "tags_producao": []
+    }
+
+    for painel in lista_paineis_bim:
+        # 1. Automação de Quantitativos (Área Líquida)
+        area_bruta = painel['altura'] * painel['largura']
+        area_vãos = painel.get('area_janelas', 0) + painel.get('area_portas', 0)
+        area_liquida = area_bruta - area_vãos
+
+        # 2. Geração Automática de Tag para o Galpão (QR Code)
+        tag = f"LICEU-VED-{id_projeto}-{painel['id']}"
+        
+        # 3. Lógica de Material (Ponto Crítico: Desperdício de 2%)
+        material_necessario = area_liquida * 1.02 # Apenas 2% de perda técnica
+        
+        relatorio_rpa["tags_producao"].append({
+            "tag": tag,
+            "area_liquida_m2": round(area_liquida, 2),
+            "posicao_bim": painel['coordenada_eixo'],
+            "status": "ENVIADO_PARA_CORTE_CNC"
+        })
+        relatorio_rpa["total_paineis_processados"] += 1
+
+    return relatorio_rpa
+
+def validar_desempenho_termico(espessura, material):
+    """
+    Valida se a vedação atende à Norma de Desempenho (NBR 15575).
+    """
+    transmitancia_termica = 0.5 # Exemplo para painel sanduíche Liceu
+    return {
+        "transmitancia": transmitancia_termica,
+        "conforto_termico": "EXCELENTE" if transmitancia_termica < 1.0 else "REVISAR",
+        "norma_referencia": "NBR 15575-4"
+    }

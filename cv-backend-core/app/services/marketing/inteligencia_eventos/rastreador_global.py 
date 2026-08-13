@@ -1,0 +1,20 @@
+import requests
+
+def monitorar_agenda_global():
+    """
+    Busca em APIs de notícias e calendários eventos de construção e inovação.
+    Sugere a criação de um 'Stand Virtual' ou Holograma.
+    """
+    eventos_detectados = [
+        {"nome": "Web Summit Rio", "data": "2026-04-15", "tema": "PropTech"},
+        {"nome": "Expo Revestir", "data": "2026-03-20", "tema": "Acabamentos"}
+    ]
+    
+    for evento in eventos_detectados:
+        if "PropTech" in evento['tema']:
+            # Aciona o depto de Arquitetura para gerar o modelo 3D do Stand
+            return {
+                "estrategia": "PRESENÇA_VIRTUAL_LICEU",
+                "acao": "Gerar Holograma do Kit Casa v2.0",
+                "target": evento['nome']
+            }

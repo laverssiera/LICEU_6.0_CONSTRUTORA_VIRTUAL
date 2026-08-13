@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CV Backend: Demo First Flow",
+      "type": "shell",
+      "command": "./scripts/demo_first_flow.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/cv-backend-core"
+      },
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}

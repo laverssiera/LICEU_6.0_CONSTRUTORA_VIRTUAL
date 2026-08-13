@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: war-room-runtime
+spec:
+  selector:
+    app: war-room-runtime
+  ports:
+    - protocol: TCP
+      port: 8086
+      targetPort: 8086
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: war-room-runtime
+  labels:
+    app: war-room-runtime
+    tracing: enabled
+    federation: enabled
+  annotations:
+    sovereign-runtime: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: war-room-runtime
+  template:
+    metadata:
+      labels:
+        app: war-room-runtime
+        tracing: enabled
+        federation: enabled
+      annotations:
+        sovereign-runtime: "true"
+    spec:
+      containers:
+        - name: war-room-runtime
+          image: liceu/war-room-runtime:latest
+          ports:
+            - containerPort: 8086
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      automountServiceAccountToken: true

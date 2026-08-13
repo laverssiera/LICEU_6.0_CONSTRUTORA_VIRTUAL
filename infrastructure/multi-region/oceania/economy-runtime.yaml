@@ -1,0 +1,128 @@
+# Economy Runtime Soberano Global
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: economy-runtime
+  labels:
+    app: economy-runtime
+    region: oceania
+    sovereign: "true"
+    agi-infra: "civilization-scale"
+  annotations:
+    agi.sovereign/consensus: "economy"
+    agi.sovereign/topology: "oceania"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: economy-runtime
+  template:
+    metadata:
+      labels:
+        app: economy-runtime
+        region: oceania
+        sovereign: "true"
+      annotations:
+        agi.sovereign/consensus: "economy"
+        agi.sovereign/topology: "oceania"
+    spec:
+      priorityClassName: agi-critical
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        allowPrivilegeEscalation: false
+      containers:
+      - name: economy-runtime
+        image: liceu/economy-runtime:latest
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        env:
+        - name: REGION
+          value: "oceania"
+        - name: SOVEREIGN_MODE
+          value: "true"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - economy-runtime
+            topologyKey: "kubernetes.io/hostname"
+      tolerations:
+      - key: "critical"
+        operator: "Exists"
+        effect: "NoSchedule"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: economy-runtime-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: economy-runtime
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: economy-runtime-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: economy-runtime
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: economy-runtime-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: economy-runtime
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          sovereign: "true"
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          sovereign: "true"

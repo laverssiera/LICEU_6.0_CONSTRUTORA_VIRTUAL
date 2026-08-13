@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/liceu_core_schemas/__init__.py
+src/liceu_core_schemas/models.py
+src/liceu_core_schemas/registry.py
+src/liceu_core_schemas.egg-info/PKG-INFO
+src/liceu_core_schemas.egg-info/SOURCES.txt
+src/liceu_core_schemas.egg-info/dependency_links.txt
+src/liceu_core_schemas.egg-info/requires.txt
+src/liceu_core_schemas.egg-info/top_level.txt

@@ -1,0 +1,1 @@
+# Spatial index for Digital Twin

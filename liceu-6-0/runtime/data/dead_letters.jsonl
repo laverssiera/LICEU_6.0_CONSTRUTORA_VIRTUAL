@@ -1,0 +1,1 @@
+{"failed_at": "2026-04-28T02:08:56.415259+00:00", "reason": "missing_fields=version", "event": {"id": "invalid-004", "type": "deal.closed", "source": "test-harness", "timestamp": "2026-04-28T02:07:00+00:00", "payload": {"deal_id": "broken"}}}

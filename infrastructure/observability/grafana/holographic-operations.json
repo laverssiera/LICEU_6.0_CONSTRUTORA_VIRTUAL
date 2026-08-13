@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Holographic Operations",
+    "panels": [
+      {"type": "graph", "title": "WebXR Sessions", "targets": [{"expr": "webxr_sessions"}]},
+      {"type": "graph", "title": "Holographic Topology Events", "targets": [{"expr": "holographic_topology_events"}]}
+    ]
+  }
+}

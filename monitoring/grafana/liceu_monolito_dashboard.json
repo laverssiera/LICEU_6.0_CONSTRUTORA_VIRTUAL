@@ -1,0 +1,34 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "LICEU Monolito - Eventos",
+    "panels": [
+      {
+        "type": "graph",
+        "title": "Eventos Recebidos",
+        "targets": [
+          { "expr": "monolito_events_received", "legendFormat": "Recebidos" }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "graph",
+        "title": "Eventos Falhos",
+        "targets": [
+          { "expr": "monolito_events_failed", "legendFormat": "Falhas" }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "graph",
+        "title": "Latência de Eventos",
+        "targets": [
+          { "expr": "monolito_event_latency_seconds", "legendFormat": "Latência" }
+        ],
+        "datasource": "Prometheus"
+      }
+    ],
+    "schemaVersion": 16,
+    "version": 1
+  }
+}

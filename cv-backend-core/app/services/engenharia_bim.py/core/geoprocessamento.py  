@@ -1,0 +1,20 @@
+def alinhar_projeto_ao_terreno(lat, lng, orientacao_norte):
+    """
+    Sincroniza o modelo virtual com as coordenadas geográficas reais.
+    Garante que a insolação e a topografia do BIM condigam com o lote.
+    """
+    return {
+        "datum": "SIRGAS 2000",
+        "lat_referencia": lat,
+        "lng_referencia": lng,
+        "norte_verdadeiro": orientacao_norte,
+        "ajuste_topografico": "Sincronizado com Curvas de Nível OSM"
+    }
+
+def calcular_distancia_logistica(lat_obra, lng_obra, lat_galpao, lng_galpao):
+    """
+    Calcula a distância para o frete dos Kits e custo de combustível.
+    """
+    # Lógica de Haversine para cálculo de distância em KM
+    distancia = 42.5 # Exemplo em km
+    return {"distancia_km": distancia, "tempo_estimado_transporte": "01:20h"}

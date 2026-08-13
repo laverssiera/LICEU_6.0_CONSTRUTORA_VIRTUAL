@@ -1,0 +1,22 @@
+def verificar_interferencias(modelo_bim):
+    """
+    Detecta conflitos (clashes) entre Hidráulica, Elétrica e Estrutura.
+    Essencial para garantir a montagem perfeita dos Kits Liceu.
+    """
+    conflitos = []
+    # Simulação de detecção de colisão geométrica
+    print("Iniciando varredura de interferências no Gêmeo Digital...")
+    
+    # Exemplo: Se um duto de AC cruza uma viga estrutural
+    conflitos.append({
+        "disciplinas": ["Climatização", "Estrutura"],
+        "coordenada_xyz": [10.5, 22.1, 3.0],
+        "gravidade": "CRÍTICO",
+        "msg": "Duto de ar atravessando viga principal. Revisar furo ou rota."
+    })
+    
+    return {
+        "status": "CONFLITOS DETECTADOS" if conflitos else "ZERO CLASH ✅",
+        "total_erros": len(conflitos),
+        "lista_conflitos": conflitos
+    }

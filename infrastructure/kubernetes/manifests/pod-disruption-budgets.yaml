@@ -1,0 +1,39 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pdb-collective-mind
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: collective-mind
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pdb-federation-runtime
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: federation-runtime
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pdb-runtime-graph
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: runtime-graph
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pdb-observability-stack
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: prometheus

@@ -1,0 +1,54 @@
+apiVersion: networking.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: cognition-namespace-authz
+  namespace: cognition
+spec:
+  rules:
+    - from:
+        - source:
+            namespaces: ["cognition"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: federation-namespace-authz
+  namespace: federation
+spec:
+  rules:
+    - from:
+        - source:
+            namespaces: ["federation"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: observability-namespace-authz
+  namespace: observability
+spec:
+  rules:
+    - from:
+        - source:
+            namespaces: ["observability"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: planetary-namespace-authz
+  namespace: planetary
+spec:
+  rules:
+    - from:
+        - source:
+            namespaces: ["planetary"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: edge-namespace-authz
+  namespace: edge
+spec:
+  rules:
+    - from:
+        - source:
+            namespaces: ["edge"]

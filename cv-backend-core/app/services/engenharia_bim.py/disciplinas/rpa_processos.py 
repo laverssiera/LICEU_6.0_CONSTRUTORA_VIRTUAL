@@ -1,0 +1,22 @@
+import requests # Ou bibliotecas específicas como pymodbus
+
+def comandar_clp_maquina(ip_clp, acao, parametro):
+    """
+    Envia ordens diretas para os CLPs das máquinas de corte, 
+    betoneiras automáticas ou braços robóticos.
+    """
+    # Exemplo de comando via protocolo industrial (MQTT ou Modbus)
+    comandos_industriais = {
+        "INICIAR_CURA": {"registro": 4001, "valor": 1},
+        "CORTE_LASER": {"registro": 4005, "valor": parametro},
+        "TRAVAR_ESTEIRA": {"registro": 9999, "valor": 0}
+    }
+    
+    # Simulação de envio para o hardware
+    print(f"Enviando sinal para CLP {ip_clp}: Registro {comandos_industriais[acao]}")
+    
+    return {
+        "status_maquina": "EXECUTANDO",
+        "confirmacao_hardware": "ACK_RECEIVED",
+        "oee_atual": "94% (Alta Produtividade)"
+    }

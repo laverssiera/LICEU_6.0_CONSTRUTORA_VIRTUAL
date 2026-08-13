@@ -1,0 +1,56 @@
+{
+  "lead.created": {
+    "source": "archimedes",
+    "consumers": ["cefeida", "gamemkt", "john", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "match.generated": {
+    "source": "cefeida",
+    "consumers": ["archimedes", "john", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "deal.closed": {
+    "source": "archimedes",
+    "consumers": ["juridicotech", "hubbackoffice", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "proposal.sent": {
+    "source": "juridicotech",
+    "consumers": ["archimedes", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "contract.created": {
+    "source": "juridicotech",
+    "consumers": ["archimedes", "hubbackoffice", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "contract.signed": {
+    "source": "juridicotech",
+    "consumers": ["hubbackoffice", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "commission.protected": {
+    "source": "juridicotech",
+    "consumers": ["hubbackoffice", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "payment.generated": {
+    "source": "hubbackoffice",
+    "consumers": ["archimedes", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  },
+  "campaign.triggered": {
+    "source": "gamemkt",
+    "consumers": ["archimedes", "john", "runtime"],
+    "versions": ["v1", "v2"],
+    "current_version": "v1"
+  }
+}

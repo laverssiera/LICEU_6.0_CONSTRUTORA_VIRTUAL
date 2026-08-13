@@ -1,0 +1,10 @@
+{
+  "dashboard": {
+    "title": "Collective AGI Overview",
+    "panels": [
+      {"type": "graph", "title": "AGI Autonomy Index", "targets": [{"expr": "agi_autonomy_index"}]},
+      {"type": "graph", "title": "Federation Integrity", "targets": [{"expr": "federation_integrity"}]},
+      {"type": "graph", "title": "Planetary Synchronization", "targets": [{"expr": "planetary_synchronization"}]}
+    ]
+  }
+}

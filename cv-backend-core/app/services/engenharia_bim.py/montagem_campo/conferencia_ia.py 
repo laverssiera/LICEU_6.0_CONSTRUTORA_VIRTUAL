@@ -1,0 +1,19 @@
+def auditar_montagem_visual(imagem_campo, id_peca_projeto):
+    """
+    Analisa a foto enviada pelo App e compara com a tolerância industrial.
+    """
+    # A IA (YOLO11) detecta os eixos da peça na imagem
+    deteccao = {"prumo": 89.9, "encaixe_mm": 2} # Simulação de retorno da IA
+    
+    tolerancia_prumo = 0.5 # graus
+    tolerancia_encaixe = 5 # milímetros
+
+    status = "APROVADO ✅" if deteccao['encaixe_mm'] <= tolerancia_encaixe else "REPROVADO ❌"
+    
+    return {
+        "peca": id_peca_projeto,
+        "status_tecnico": status,
+        "desvio_detectado": f"{deteccao['encaixe_mm']}mm",
+        "registro_qualidade": "FOTO_SALVA_NO_DIARIO",
+        "msg": "Pode prosseguir com a fixação" if status == "APROVADO ✅" else "Ajustar prumo antes de fixar"
+    }

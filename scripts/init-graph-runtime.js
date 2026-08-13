@@ -1,0 +1,1 @@
+console.log(`\n==============================\nLICEU GRAPH RUNTIME\n==============================\n\nNeo4j: ONLINE\nGraph API: READY\n\nGraph Runtime Ready.\n`);

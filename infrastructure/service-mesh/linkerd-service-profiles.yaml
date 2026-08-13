@@ -1,0 +1,29 @@
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: liceu-core.default.svc.cluster.local
+spec:
+  routes:
+    - name: GET /runtime/civilization-status
+      condition:
+        method: GET
+        pathRegex: /runtime/civilization-status
+    - name: GET /runtime/holographic-status
+      condition:
+        method: GET
+        pathRegex: /runtime/holographic-status
+    - name: GET /runtime/planetary-metrics
+      condition:
+        method: GET
+        pathRegex: /runtime/planetary-metrics
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: edge-runtime.default.svc.cluster.local
+spec:
+  routes:
+    - name: GET /runtime/edge-status
+      condition:
+        method: GET
+        pathRegex: /runtime/edge-status

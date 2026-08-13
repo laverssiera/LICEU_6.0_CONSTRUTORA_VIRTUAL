@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+psycopg2-binary
+pydantic-settings
+python-multipart
+numpy-financial
+requests
+redis
+nats-py>=2.9.0
+protobuf>=4.0.0
+httpx
+geopy
+pytest
+networkx
+psutil

@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Digital Twin Operations",
+    "panels": [
+      {"type": "graph", "title": "Digital Twin Syncs", "targets": [{"expr": "digital_twin_syncs"}]},
+      {"type": "graph", "title": "Digital Twin Events", "targets": [{"expr": "digital_twin_events"}]}
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+def validar_material_ipt(material_nome, parametro_teste):
+    """
+    Consulta a base técnica (Simulada) do IPT para validar materiais.
+    Foco: NBR 15575 (Norma de Desempenho).
+    """
+    # Banco de dados de ensaios do IPT (Massa de dados estratégica)
+    base_ipt = {
+        "PAINEL_LICEU_V1": {"resistencia_fogo": "60min", "isolamento_acustico": "45dB"},
+        "CONCRETO_INDUSTRIAL_H30": {"resistencia_compressao": "30MPa", "cura_ideal": "7 dias"}
+    }
+    
+    ensaio = base_ipt.get(material_nome)
+    
+    if not ensaio:
+        return {"status": "ALERTA ⚠️", "msg": "Material sem certificado IPT vinculado."}
+    
+    return {
+        "status": "CERTIFICADO ✅",
+        "resultado_ensaio": ensaio.get(parametro_teste),
+        "instituto": "IPT - Inst. de Pesquisas Tecnológicas"
+    }

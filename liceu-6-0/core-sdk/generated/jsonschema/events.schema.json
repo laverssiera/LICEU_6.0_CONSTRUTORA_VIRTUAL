@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://liceu.local/schemas/events.schema.json",
+  "title": "LICEU Canonical Event Envelope",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "version",
+    "source",
+    "timestamp",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "lead.created",
+        "match.generated",
+        "deal.closed",
+        "proposal.sent",
+        "contract.created",
+        "contract.signed",
+        "commission.protected",
+        "payment.generated",
+        "campaign.triggered"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1",
+        "v2"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "x-liceu-canonical-events": [
+    {
+      "enum_name": "LEAD_CREATED",
+      "event_key": "lead.created",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "MATCH_GENERATED",
+      "event_key": "match.generated",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "DEAL_CLOSED",
+      "event_key": "deal.closed",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "PROPOSAL_SENT",
+      "event_key": "proposal.sent",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "CONTRACT_CREATED",
+      "event_key": "contract.created",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "CONTRACT_SIGNED",
+      "event_key": "contract.signed",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "COMMISSION_PROTECTED",
+      "event_key": "commission.protected",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "PAYMENT_GENERATED",
+      "event_key": "payment.generated",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    },
+    {
+      "enum_name": "CAMPAIGN_TRIGGERED",
+      "event_key": "campaign.triggered",
+      "versions": [
+        "v1",
+        "v2"
+      ]
+    }
+  ]
+}

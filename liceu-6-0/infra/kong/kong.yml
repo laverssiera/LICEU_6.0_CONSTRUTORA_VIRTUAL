@@ -1,0 +1,18 @@
+_format_version: "3.0"
+
+services:
+  - name: archimedes-api
+    url: http://archimedes_api:8000
+    routes:
+      - name: archimedes-api-route
+        paths:
+          - /archimedes
+        strip_path: true
+
+  - name: nats-monitor
+    url: http://nats:8222
+    routes:
+      - name: nats-monitor-route
+        paths:
+          - /nats
+        strip_path: true

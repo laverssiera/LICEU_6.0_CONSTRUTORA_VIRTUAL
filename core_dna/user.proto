@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package liceu.core;
+
+message User {
+  string id = 1;
+  string name = 2;
+  string role = 3;
+  string tenant = 4;
+  string email = 5;
+  string created_at = 6;
+}

@@ -1,0 +1,15 @@
+{
+  "events": [
+    {
+      "name": "lead.created",
+      "version": "v1",
+      "domain": "crm"
+    },
+    {
+      "name": "deal.closed",
+      "version": "v1",
+      "domain": "juridico"
+    }
+    // Adicione todos os eventos padronizados aqui
+  ]
+}

@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: 'hubbackoffice'
+    static_configs:
+      - targets: ['hubbackoffice:8000']
+  - job_name: 'archimedes'
+    static_configs:
+      - targets: ['archimedes:8000']
+  - job_name: 'juridicotech'
+    static_configs:
+      - targets: ['juridicotech:8000']
+  - job_name: 'john'
+    static_configs:
+      - targets: ['john:8000']
+  - job_name: 'gamemkt'
+    static_configs:
+      - targets: ['gamemkt:8000']

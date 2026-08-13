@@ -1,0 +1,19 @@
+# disciplinas/automacao_iot.py
+def configurar_smart_home(kit_id):
+    """Define os sensores que vão para o galpão já instalados no kit."""
+    return {
+        "sensores": ["Vazamento_Agua", "Consumo_Energia", "Temperatura"],
+        "id_nuvem": f"LICEU-IOT-{kit_id}"
+    }
+def monitorar_saude_obra(sensor_id, valor_leitura):
+    """
+    Monitora vibração e prumo das peças pré-moldadas durante a montagem.
+    """
+    limite_tolerancia = 0.005 # 5mm de precisão industrial
+    if valor_leitura > limite_tolerancia:
+        return {
+            "alerta": "🚨 DESVIO DE MONTAGEM DETECTADO",
+            "acao": "Travar montagem e recalibrar posição do Kit",
+            "impacto_financeiro": "Evita retrabalho de acabamento"
+        }
+    return {"status": "PRECISÃO LICEU ✅"}

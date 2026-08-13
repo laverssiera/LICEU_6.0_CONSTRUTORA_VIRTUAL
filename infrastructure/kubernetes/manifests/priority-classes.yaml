@@ -1,0 +1,31 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: sovereign-critical
+value: 1000000
+globalDefault: false
+description: "Soberania planetária, runtime essencial."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: cognition-critical
+value: 900000
+globalDefault: false
+description: "Cognition runtime crítico."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: federation-critical
+value: 800000
+globalDefault: false
+description: "Federation runtime crítico."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: observability-critical
+value: 700000
+globalDefault: false
+description: "Observability stack crítico."

@@ -1,0 +1,16 @@
+def gerenciar_estoque_cd(id_cd, id_kit):
+    """
+    Controla a entrada e saída de Kits nos CDs regionais.
+    """
+    estoque_atual = 150 # Exemplo de dado do banco
+    capacidade_maxima = 500
+    
+    status_ocupacao = (estoque_atual / capacidade_maxima) * 100
+    
+    return {
+        "cd_regional": id_cd,
+        "kit_localizado": id_kit,
+        "status_armazenagem": "DISPONÍVEL",
+        "vaga_estocagem": f"SETOR-A-{id_kit}",
+        "alerta_capacidade": f"{status_ocupacao}% ocupado"
+    }

@@ -1,0 +1,5 @@
+# Regras legais de governança
+# Exemplo:
+- id: LEG001
+  name: Compliance obrigatório
+  action: block_if_non_compliant

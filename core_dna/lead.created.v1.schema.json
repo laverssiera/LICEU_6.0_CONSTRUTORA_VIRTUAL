@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "lead.created",
+  "type": "object",
+  "properties": {
+    "lead_id": {"type": "string"},
+    "name": {"type": "string"},
+    "email": {"type": "string", "format": "email"},
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "required": ["lead_id", "name", "email", "created_at"]
+}

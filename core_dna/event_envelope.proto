@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package liceu.core;
+
+message EventEnvelope {
+  string id = 1;
+  string type = 2;
+  string version = 3; // OBRIGATÓRIO: versionamento real do evento (ex: v1, v2)
+  string source = 4;
+  string timestamp = 5;
+  string tenant = 6;
+  string correlation_id = 7;
+  string payload = 8;
+  string decision_id = 9; // Propagação obrigatória do ID da decisão
+}

@@ -1,0 +1,449 @@
+x-postgres-template: &postgres-template
+  image: postgres:15
+  restart: unless-stopped
+  environment:
+    POSTGRES_USER: admin
+    POSTGRES_PASSWORD: password123
+  networks:
+    - liceu-net
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U admin -d $$POSTGRES_DB"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: liceu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: liceu
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - liceu-net
+  reverse-proxy:
+    image: traefik:v3.0
+    container_name: liceu_traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      - "8080:80"
+      - "8088:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - liceu-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      DATABASE_URL: postgresql://admin:password123@db_core_os:5432/liceu_core_os
+      REDIS_URL: redis://redis:6379/0
+      NETWORK_NAME: liceu-net
+      PUBLIC_PROXY_ENTRYPOINT: http://localhost:8080
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-false}
+      WHATSAPP_GRAPH_VERSION: ${WHATSAPP_GRAPH_VERSION:-v20.0}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-liceu-john-whatsapp}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  federation-authority:
+    build: ./apps/federation-authority
+    ports:
+      - "8201:8000"
+    networks:
+      - liceu-net
+
+  runtime-registry:
+    build: ./apps/runtime-registry
+    ports:
+      - "8208:8000"
+    networks:
+      - liceu-net
+
+
+  collective-mind:
+    build: ./apps/collective-mind
+    ports:
+      - "8206:8000"
+    networks:
+      - liceu-net
+
+  john-crm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: john_crm_service
+    working_dir: /src
+    volumes:
+      - .:/src
+    environment:
+      PYTHONPATH: /src
+      JOHN_SOURCE: site
+      REDIS_URL: redis://redis:6379/0
+      EVENT_SUBJECT: crm.lead.created
+      NATS_URL: nats://nats:4222
+    command: python -u modules/crm/john_crm/service.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      db_core_os:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - liceu-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,time,sys; p='/tmp/john_crm_healthy'; sys.exit(0 if os.path.exists(p) and (time.time()-os.path.getmtime(p))<90 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  john-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: john_engine_service
+    working_dir: /src/liceu-6.0/runtime
+    volumes:
+      - .:/src
+    environment:
+      PYTHONPATH: /src/liceu-6.0/runtime:/src
+      REDIS_URL: redis://redis:6379/0
+      EVENT_SUBJECT: liceu.events
+      JOHN_MODE: internal
+      NATS_URL: nats://nats:4222
+      JOHN_OUTPUT_SUBJECT: john.interpreted
+      BACKEND_INGEST_URL: http://backend:8000/john/interpreted/ingest
+      JOHN_INTERNAL_TOKEN: john-internal-dev
+    command: python -u john_engine/service.py
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db_core_os:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - liceu-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,time,sys; p='/tmp/john_engine_healthy'; sys.exit(0 if os.path.exists(p) and (time.time()-os.path.getmtime(p))<90 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  archimedes-site:
+    image: nginx:alpine
+    container_name: archimedes_public_site
+    restart: unless-stopped
+    volumes:
+      - ./infra/facades/archimedes:/usr/share/nginx/html:ro
+    networks:
+      - liceu-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=liceu-net
+      - traefik.http.routers.archimedes-public.entrypoints=web
+      - traefik.http.routers.archimedes-public.rule=Host(`archimedes.liceu.local`)
+      - traefik.http.routers.archimedes-public.priority=1
+      - traefik.http.services.archimedes-public.loadbalancer.server.port=80
+
+  cefeida-site:
+    image: nginx:alpine
+    container_name: cefeida_public_site
+    restart: unless-stopped
+    volumes:
+      - ./infra/facades/cefeida:/usr/share/nginx/html:ro
+    networks:
+      - liceu-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=liceu-net
+      - traefik.http.routers.cefeida-public.entrypoints=web
+      - traefik.http.routers.cefeida-public.rule=Host(`cefeida.liceu.local`)
+      - traefik.http.routers.cefeida-public.priority=1
+      - traefik.http.services.cefeida-public.loadbalancer.server.port=80
+
+  workspace-site:
+    image: nginx:alpine
+    container_name: liceu_workspace_site
+    restart: unless-stopped
+    volumes:
+      - ./infra/facades/workspace:/usr/share/nginx/html:ro
+    networks:
+      - liceu-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=liceu-net
+      - traefik.http.routers.workspace-public.entrypoints=web
+      - traefik.http.routers.workspace-public.rule=Host(`workspace.liceu.local`)
+      - traefik.http.routers.workspace-public.priority=1
+      - traefik.http.services.workspace-public.loadbalancer.server.port=80
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: liceu_nats_bus
+    restart: unless-stopped
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - liceu-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: liceu_redis_bus
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - liceu-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db_core_os:
+    <<: *postgres-template
+    container_name: db_core_os
+    environment:
+      POSTGRES_DB: liceu_core_os
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5542:5432"
+    volumes:
+      - db_core_os_data:/var/lib/postgresql/data
+
+  db_cefeida:
+    <<: *postgres-template
+    container_name: db_cefeida
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_cefeida
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5543:5432"
+    volumes:
+      - db_cefeida_data:/var/lib/postgresql/data
+
+  db_pdi_ia:
+    <<: *postgres-template
+    container_name: db_pdi_ia
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_pdi_ia
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5544:5432"
+    volumes:
+      - db_pdi_ia_data:/var/lib/postgresql/data
+
+  db_bim_arqu_eng:
+    <<: *postgres-template
+    container_name: db_bim_arqu_eng
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_bim_arqu_eng
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5545:5432"
+    volumes:
+      - db_bim_arqu_eng_data:/var/lib/postgresql/data
+
+  db_cdvirtual:
+    <<: *postgres-template
+    container_name: db_cdvirtual
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_cdvirtual
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5546:5432"
+    volumes:
+      - db_cdvirtual_data:/var/lib/postgresql/data
+
+  db_archimedes:
+    <<: *postgres-template
+    container_name: db_archimedes
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_archimedes
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5547:5432"
+    volumes:
+      - db_archimedes_data:/var/lib/postgresql/data
+
+  db_cea_investimentos:
+    <<: *postgres-template
+    container_name: db_cea_investimentos
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_cea_investimentos
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5548:5432"
+    volumes:
+      - db_cea_investimentos_data:/var/lib/postgresql/data
+
+  db_invest_tech:
+    <<: *postgres-template
+    container_name: db_invest_tech
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_invest_tech
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5549:5432"
+    volumes:
+      - db_invest_tech_data:/var/lib/postgresql/data
+
+  db_econo_tech:
+    <<: *postgres-template
+    container_name: db_econo_tech
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_econo_tech
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5550:5432"
+    volumes:
+      - db_econo_tech_data:/var/lib/postgresql/data
+
+  db_hub_contabil:
+    <<: *postgres-template
+    container_name: db_hub_contabil
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_hub_contabil
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5551:5432"
+    volumes:
+      - db_hub_contabil_data:/var/lib/postgresql/data
+
+  db_erp_fornecedores:
+    <<: *postgres-template
+    container_name: db_erp_fornecedores
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_erp_fornecedores
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5552:5432"
+    volumes:
+      - db_erp_fornecedores_data:/var/lib/postgresql/data
+
+  db_academia_saber:
+    <<: *postgres-template
+    container_name: db_academia_saber
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_academia_saber
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5553:5432"
+    volumes:
+      - db_academia_saber_data:/var/lib/postgresql/data
+
+  db_gtamkt:
+    <<: *postgres-template
+    container_name: db_gtamkt
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_gtamkt
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5554:5432"
+    volumes:
+      - db_gtamkt_data:/var/lib/postgresql/data
+
+  db_juridicotech:
+    <<: *postgres-template
+    container_name: db_juridicotech
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_juridicotech
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5555:5432"
+    volumes:
+      - db_juridicotech_data:/var/lib/postgresql/data
+
+  db_joh_brasileiro:
+    <<: *postgres-template
+    container_name: db_joh_brasileiro
+    profiles: ["monolith-dbs"]
+    environment:
+      POSTGRES_DB: liceu_joh_brasileiro
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5556:5432"
+    volumes:
+      - db_joh_brasileiro_data:/var/lib/postgresql/data
+
+networks:
+  liceu-net:
+    name: liceu-net
+    driver: bridge
+
+volumes:
+  redis_data:
+  db_core_os_data:
+  db_cefeida_data:
+  postgres_data:
+  db_pdi_ia_data:
+  db_bim_arqu_eng_data:
+  db_cdvirtual_data:
+  db_archimedes_data:
+  db_cea_investimentos_data:
+  db_invest_tech_data:
+  db_econo_tech_data:
+  db_hub_contabil_data:
+  db_erp_fornecedores_data:
+  db_academia_saber_data:
+  db_gtamkt_data:
+  db_juridicotech_data:
+
+  db_joh_brasileiro_data:

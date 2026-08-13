@@ -1,0 +1,8 @@
+# manufatura_galpao/ordem_producao.py
+def emitir_op_industrial(id_projeto, lista_peças):
+    """Gera a Ordem de Produção (OP) vinculada ao Financeiro."""
+    return {
+        "op_id": f"OP-LICEU-{id_projeto}",
+        "itens": [p['nome'] for p in lista_peças],
+        "status": "FILA_PRODUCAO",
+        "custo_estimado_energia": "Calculando..."

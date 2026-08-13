@@ -1,0 +1,9 @@
+{
+  "dashboard": {
+    "title": "Sovereign Governance",
+    "panels": [
+      {"type": "graph", "title": "Governance Events", "targets": [{"expr": "governance_events"}]},
+      {"type": "graph", "title": "Sovereignty Level", "targets": [{"expr": "sovereignty_level"}]}
+    ]
+  }
+}

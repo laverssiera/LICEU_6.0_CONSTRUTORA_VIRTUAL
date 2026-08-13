@@ -1,0 +1,7 @@
+# manufatura_galpao/estoque_insumos.py
+def validar_estoque_minimo(item, qtd):
+    """Evita parada de fábrica: Alerta o Diretor se o aço/cimento acabar."""
+    estoque_critico = 100 # Unidades
+    if qtd < estoque_critico:
+        return {"alerta": "RECOMPRA_IMEDIATA", "msg": f"Estoque de {item} em 15%"}
+    return {"status": "ESTOQUE_SAUDÁVEL"}

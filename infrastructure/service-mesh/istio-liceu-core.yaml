@@ -1,0 +1,70 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: liceu-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: liceu-core-vs
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - liceu-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/"
+      route:
+        - destination:
+            host: liceu-core
+            port:
+              number: 8000
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: liceu-core-dr
+spec:
+  host: liceu-core
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: liceu-core-authz
+spec:
+  selector:
+    matchLabels:
+      app: liceu-core
+  rules:
+    - from:
+        - source:
+            principals: ["*"]
+      to:
+        - operation:
+            methods: ["GET", "POST"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: liceu-core-peer-auth
+spec:
+  selector:
+    matchLabels:
+      app: liceu-core
+  mtls:
+    mode: STRICT

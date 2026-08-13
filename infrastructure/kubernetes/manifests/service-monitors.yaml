@@ -1,0 +1,59 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cognition-runtime-monitor
+spec:
+  selector:
+    matchLabels:
+      app: cognition-runtime
+  endpoints:
+    - port: 8090
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: federation-runtime-monitor
+spec:
+  selector:
+    matchLabels:
+      app: federation-runtime
+  endpoints:
+    - port: 8091
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graph-runtime-monitor
+spec:
+  selector:
+    matchLabels:
+      app: runtime-graph
+  endpoints:
+    - port: 8083
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: edge-runtime-monitor
+spec:
+  selector:
+    matchLabels:
+      app: edge-runtime
+  endpoints:
+    - port: 8087
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: war-room-runtime-monitor
+spec:
+  selector:
+    matchLabels:
+      app: war-room-runtime
+  endpoints:
+    - port: 8086
+      path: /metrics

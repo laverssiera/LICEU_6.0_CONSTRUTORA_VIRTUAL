@@ -1,0 +1,11 @@
+def preparar_modelo_ra(id_projeto):
+    """
+    Converte o modelo pesado de engenharia em um arquivo leve (.GLB / .USDZ)
+    para o cliente 'projetar' a casa no terreno real usando a câmera.
+    """
+    return {
+        "url_modelo_3d": f"https://api.liceu.io{id_projeto}.glb",
+        "escala": "1:1",
+        "ancoragem": "GPS_HORIZONTAL", # Usa a bússola e o GPS para alinhar no lote
+        "msg_instrucao": "IA Liceu: 'Aponte para o chão do terreno para ver sua casa surgir!'"
+    }

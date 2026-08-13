@@ -1,0 +1,16 @@
+def monitorar_integridade_carga(id_transporte, dados_sensores):
+    """
+    Lê sensores de impacto e umidade em tempo real durante o percurso.
+    Prevenção de patologias antes da montagem.
+    """
+    max_impacto_permitido = 2.5 # Força G
+    impacto_real = dados_sensores.get('impacto_g', 0)
+    
+    if impacto_real > max_impacto_permitido:
+        return {
+            "status": "ALERTA_RISCO 🚨",
+            "msg": "Impacto severo detectado. Acionar Qualidade na descarga.",
+            "registro_juridico": "Evidência gerada para possível acionamento de seguro"
+        }
+    
+    return {"status": "INTEGRIDADE_PRESERVADA ✅"}

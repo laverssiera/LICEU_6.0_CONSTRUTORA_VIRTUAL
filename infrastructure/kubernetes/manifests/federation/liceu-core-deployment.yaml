@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: liceu-core
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: liceu-core
+  template:
+    metadata:
+      labels:
+        app: liceu-core
+    spec:
+      containers:
+      - name: liceu-core
+        image: liceu/liceu-core:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: liceu-core
+spec:
+  selector:
+    app: liceu-core
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

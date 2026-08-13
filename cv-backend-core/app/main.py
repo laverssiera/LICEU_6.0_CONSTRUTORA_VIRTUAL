@@ -360,6 +360,20 @@ class EventPayload(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
+class EarthRuntimeInitializeRequest(BaseModel):
+    seed: Dict[str, Any] | None = None
+
+
+class EarthRuntimeEventRequest(BaseModel):
+    event_type: str = Field(default="EARTH_EVENT", min_length=1, max_length=120)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+
+
+class EarthRuntimeScenarioRunRequest(BaseModel):
+    name: str = Field(default="earth-scenario", min_length=2, max_length=120)
+    events: list[EarthRuntimeEventRequest] = Field(default_factory=list)
+
+
 class RegistryRegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     url: str = Field(min_length=8, max_length=200)
@@ -811,8 +825,137 @@ def get_virtual_monoliths() -> dict[str, str]:
         "cefeida": "camada estratégica e insights disponível no core",
         "pdi_ia": "pipeline cognitivo e ConcreteVision ativos",
         "archimedes": "módulos de viabilidade e fachada pública prontos",
+        "bim_arqu_eng": "digital twin e monitoramento de execução assistidos no core",
+        "cdvirtual": "contexto espacial e ativos urbanos virtualizados no core",
+        "cea_investimentos": "motor de impacto econômico e capital em modo assistido",
+        "invest_tech": "âncoras de governança e confiança em modo assistido",
+        "econo_tech": "modelo econômico e stress macro disponível no core",
+        "hub_contabil": "hub financeiro e conciliação em modo assistido",
+        "erp_fornecedores": "cadeia de suprimentos e procurement em modo assistido",
         "academia_saber": "geração de jornadas e treinamentos ativa",
+        "gtamkt": "difusão de campanhas e engajamento em modo assistido",
+        "juridicotech": "auditoria jurídica e compliance em modo assistido",
         "john_brasileiro": "concierge, memória curta e status report online",
+    }
+
+
+CIVILIZATION_INTEGRATION_BINDINGS: list[dict[str, Any]] = [
+    {"name": "ARCHIMEDES", "slug": "archimedes", "aliases": ["archimedes"]},
+    {"name": "JOHN", "slug": "john_brasileiro", "aliases": ["john", "john_brasileiro", "joh_brasileiro"]},
+    {"name": "OPERA", "slug": "opera", "aliases": ["opera"]},
+    {"name": "CEFEIDA", "slug": "cefeida", "aliases": ["cefeida"]},
+    {"name": "ANCHORS", "slug": "invest_tech", "aliases": ["anchors", "invest_tech"]},
+    {"name": "BIM", "slug": "bim_arqu_eng", "aliases": ["bim", "bim_arqu_eng"]},
+    {"name": "P&D", "slug": "pdi_ia", "aliases": ["p&d", "pd", "pdi", "pdi_ia"]},
+    {"name": "ECONOTECH", "slug": "econo_tech", "aliases": ["econotech", "econo_tech"]},
+    {"name": "CEA", "slug": "cea_investimentos", "aliases": ["cea", "cea_investimentos"]},
+    {"name": "JURIDICOTECH", "slug": "juridicotech", "aliases": ["juridicotech", "juridico"]},
+    {"name": "FORNECEDORES", "slug": "erp_fornecedores", "aliases": ["fornecedores", "erp_fornecedores"]},
+    {"name": "GAME", "slug": "gtamkt", "aliases": ["game", "gtamkt", "gamemkt"]},
+    {"name": "ACADEMIA", "slug": "academia_saber", "aliases": ["academia", "academia_saber"]},
+]
+
+
+def _civilization_health_status(raw_value: Any) -> str:
+    raw = str(raw_value or "")
+    upper = raw.upper()
+    lower = raw.lower()
+    if "OFFLINE" in upper:
+        return "OFFLINE"
+    if "ONLINE" in upper and "virtualizado" in lower:
+        return "VIRTUALIZED"
+    if "ONLINE" in upper:
+        return "ONLINE"
+    return "UNKNOWN"
+
+
+def _build_civilization_state_from_integrations(
+    health: Dict[str, Any],
+    payload: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    target = payload or {}
+    integrations_payload = target.get("integrations") if isinstance(target.get("integrations"), dict) else {}
+    health_details = health.get("detalhes", {}) if isinstance(health.get("detalhes"), dict) else {}
+    state_now = datetime.now(timezone.utc).isoformat()
+
+    resolved_integrations: Dict[str, Dict[str, Any]] = {}
+    for binding in CIVILIZATION_INTEGRATION_BINDINGS:
+        integration_name = str(binding["name"])
+        source_slug = str(binding["slug"])
+        aliases = [normalize_dispatch_intent(item) for item in binding.get("aliases", [])]
+
+        payload_entry = None
+        for key, value in integrations_payload.items():
+            normalized_key = normalize_dispatch_intent(str(key))
+            if normalized_key in aliases:
+                payload_entry = value
+                break
+
+        health_raw = health_details.get(source_slug)
+        status = _civilization_health_status(health_raw)
+        if payload_entry is not None:
+            if isinstance(payload_entry, dict):
+                status = str(payload_entry.get("status") or status).upper()
+            else:
+                status = str(payload_entry).upper()
+
+        if status not in {"ONLINE", "VIRTUALIZED", "OFFLINE"}:
+            status = "UNKNOWN"
+
+        resolved_integrations[integration_name] = {
+            "status": status,
+            "source_slug": source_slug,
+            "health_signal": health_raw,
+            "state": payload_entry if payload_entry is not None else {"status": status},
+            "updated_at": state_now,
+        }
+
+    total = len(resolved_integrations)
+    online = sum(1 for item in resolved_integrations.values() if item["status"] in {"ONLINE", "VIRTUALIZED"})
+    offline = sum(1 for item in resolved_integrations.values() if item["status"] == "OFFLINE")
+    unknown = total - online - offline
+
+    federation_health = 0.0
+    if total > 0:
+        federation_health = (online / total) * 100
+
+    critical_alerts = [
+        {
+            "integration": name,
+            "severity": "high",
+            "reason": "source_offline",
+        }
+        for name, item in resolved_integrations.items()
+        if item["status"] == "OFFLINE"
+    ]
+
+    status = "EXPANDING"
+    if offline > 0:
+        status = "STABILIZING" if offline <= 3 else "DEFENSIVE"
+
+    return {
+        "civilization_status": status,
+        "metrics": {
+            "missions_active": 10 + online * 2,
+            "contracts_active": 1200 + online * 75,
+            "twins_active": 280 + online * 14,
+            "scientific_experiments": 4 + online,
+            "construction_projects": 8 + online,
+            "financial_exposure": f"${1.8 + (offline * 0.35) + (unknown * 0.1):.2f}B",
+            "federation_health": f"{federation_health:.2f}%",
+        },
+        "critical_alerts": critical_alerts,
+        "integrations": resolved_integrations,
+        "context": {
+            "integration_totals": {
+                "total": total,
+                "online": online,
+                "offline": offline,
+                "unknown": unknown,
+            },
+            "source": "civilization-integration-orchestrator",
+            "captured_at": state_now,
+        },
     }
 
 
@@ -950,6 +1093,90 @@ def get_liceu_orchestrator(app: FastAPI, use_nats_transport: bool = False):
     orchestrator = LiceuOrchestrator(event_transport=transport, auth_secret=settings.SSO_SECRET_KEY)
     setattr(app.state, state_key, orchestrator)
     return orchestrator
+
+
+def get_earth_runtime_entry(app: FastAPI):
+    cached = getattr(app.state, "earth_runtime_entry", None)
+    if cached is not None:
+        return cached
+
+    repo_root = BASE_DIR.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+
+    from runtime.planetary.earth_runtime import earth_entry_runtime
+
+    app.state.earth_runtime_entry = earth_entry_runtime
+    return earth_entry_runtime
+
+
+def get_civilization_runtime_bundle(app: FastAPI) -> Dict[str, Any]:
+    cached = getattr(app.state, "civilization_runtime_bundle", None)
+    if cached is not None:
+        return cached
+
+    repo_root = BASE_DIR.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+
+    from runtime.civilization_geospatial_runtime import CivilizationGeospatialRuntime
+    from runtime.civilization_global_twin_runtime import CivilizationGlobalTwinRuntime
+    from runtime.civilization_graph_runtime import CivilizationGraphRuntime
+    from runtime.civilization_kernel_runtime import CivilizationKernelRuntime
+    from runtime.civilization_pipeline_runtime import CivilizationPipelineRuntime
+    from runtime.civilization_prediction_runtime import CivilizationPredictionRuntime
+    from runtime.civilization_score_runtime import CivilizationScoreRuntime
+    from runtime.civilization_sensor_runtime import CivilizationSensorRuntime
+    from runtime.civilization_snapshot_runtime import CivilizationSnapshotRuntime
+    from runtime.civilization_state_runtime import CivilizationStateRuntime
+    from runtime.civilization_decision_runtime import CivilizationDecisionRuntime
+    from runtime.civilization_earth_snapshot_runtime import CivilizationEarthSnapshotRuntime
+
+    bus = get_event_bus()
+
+    def publish_to_event_bus(channel: str, message: Dict[str, Any]) -> None:
+        bus.publish(channel, message)
+
+    geospatial_runtime = CivilizationGeospatialRuntime(
+        postgis_dsn=settings.POSTGIS_DSN or settings.DATABASE_URL,
+    )
+    sensor_runtime = CivilizationSensorRuntime(
+        event_bus_publisher=publish_to_event_bus,
+        kafka_bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+        kafka_topic=settings.CIVILIZATION_SENSOR_TOPIC,
+        stream_channel=settings.CIVILIZATION_SENSOR_TOPIC,
+    )
+    global_twin_runtime = CivilizationGlobalTwinRuntime(geospatial_runtime=geospatial_runtime)
+    graph_runtime = CivilizationGraphRuntime(
+        neo4j_uri=settings.NEO4J_URI,
+        neo4j_user=settings.NEO4J_USER,
+        neo4j_password=settings.NEO4J_PASSWORD,
+    )
+    prediction_runtime = CivilizationPredictionRuntime(sensor_runtime=sensor_runtime)
+    state_runtime = CivilizationStateRuntime()
+    score_runtime = CivilizationScoreRuntime()
+    decision_runtime = CivilizationDecisionRuntime()
+    snapshot_runtime = CivilizationSnapshotRuntime()
+    earth_snapshot_runtime = CivilizationEarthSnapshotRuntime()
+    kernel_runtime = CivilizationKernelRuntime()
+    pipeline_runtime = CivilizationPipelineRuntime()
+
+    bundle = {
+        "sensor": sensor_runtime,
+        "geospatial": geospatial_runtime,
+        "global_twin": global_twin_runtime,
+        "graph": graph_runtime,
+        "prediction": prediction_runtime,
+        "state": state_runtime,
+        "score": score_runtime,
+        "decision": decision_runtime,
+        "snapshot": snapshot_runtime,
+        "earth_snapshot": earth_snapshot_runtime,
+        "kernel": kernel_runtime,
+        "pipeline": pipeline_runtime,
+    }
+    app.state.civilization_runtime_bundle = bundle
+    return bundle
 
 
 def serialize_work_item(work: WorkItem) -> Dict[str, Any]:
@@ -1622,6 +1849,352 @@ def create_application() -> FastAPI:
             "items": items,
         }
 
+    @app.post("/civilization/twin/update")
+    async def civilization_twin_update(payload: dict | None = None):
+        target = payload or {}
+        runtime = get_civilization_runtime_bundle(app)
+
+        twin_state = runtime["global_twin"].update(target)
+        runtime["graph"].upsert_twin_state(twin_state["state"])
+
+        return {
+            "status": "updated",
+            "twin": twin_state,
+            "integrations": {
+                "postgis": bool(settings.POSTGIS_DSN or settings.DATABASE_URL),
+                "neo4j": bool(settings.NEO4J_URI),
+                "cesium": bool(settings.CESIUM_ION_ASSET_ID),
+            },
+        }
+
+    @app.post("/civilization/sensors")
+    async def civilization_sensors(payload: dict | None = None):
+        target = payload or {}
+        runtime = get_civilization_runtime_bundle(app)
+
+        ingested = runtime["sensor"].ingest(target)
+        twin_state = runtime["global_twin"].apply_sensor_event(ingested["event"])
+        runtime["graph"].register_sensor_event(twin_state["state"]["twin_id"], ingested["event"])
+
+        return {
+            "status": "ingested",
+            "sensor_event": ingested["event"],
+            "delivery": ingested["delivery"],
+            "twin": twin_state,
+            "stream": {
+                "channel": settings.CIVILIZATION_SENSOR_TOPIC,
+                "event_bus_provider": get_event_bus().provider,
+                "kafka_enabled": bool(settings.KAFKA_BOOTSTRAP_SERVERS),
+            },
+        }
+
+    @app.post("/civilization/predict")
+    async def civilization_predict(payload: dict | None = None):
+        target = payload or {}
+        runtime = get_civilization_runtime_bundle(app)
+
+        twin_id = str(target.get("twin_id") or "civilization-global")
+        horizon_minutes = int(target.get("horizon_minutes", 60))
+        twin_state = runtime["global_twin"].get_state(twin_id)
+
+        prediction = runtime["prediction"].predict(
+            state=twin_state["state"],
+            twin_id=twin_id,
+            horizon_minutes=horizon_minutes,
+        )
+
+        return {
+            "status": "predicted",
+            "prediction": prediction,
+            "twin": twin_state,
+        }
+
+    @app.get("/civilization/twin/state")
+    async def civilization_twin_state(twin_id: str = Query(default="civilization-global")):
+        runtime = get_civilization_runtime_bundle(app)
+        state = runtime["global_twin"].get_state(twin_id)
+
+        return {
+            "status": "ok",
+            "twin": state,
+            "cesium": {
+                "asset_id": settings.CESIUM_ION_ASSET_ID or None,
+                "entity": state["state"].get("cesium_entity"),
+            },
+        }
+
+    @app.get("/civilization/graph")
+    async def civilization_graph(limit: int = Query(default=200, ge=1, le=5000)):
+        runtime = get_civilization_runtime_bundle(app)
+        graph = runtime["graph"].get_graph(limit=limit)
+
+        return {
+            "status": "ok",
+            "graph": graph,
+            "integrations": {
+                "neo4j": bool(settings.NEO4J_URI),
+                "sensor_stream": settings.CIVILIZATION_SENSOR_TOPIC,
+            },
+        }
+
+    @app.post("/civilization/state")
+    async def civilization_state(payload: dict | None = None):
+        runtime = get_civilization_runtime_bundle(app)
+        health = await collect_global_health()
+        state = _build_civilization_state_from_integrations(health=health, payload=payload)
+
+        # Usa o runtime de estado como baseline, mas prioriza o estado integrado das fontes externas.
+        baseline_state = runtime["state"].get_state_snapshot(context=state.get("context"))
+        baseline_state["civilization_status"] = state["civilization_status"]
+        baseline_state["metrics"] = state["metrics"]
+        baseline_state["critical_alerts"] = state["critical_alerts"]
+        baseline_state["integrations"] = state["integrations"]
+        baseline_state["context"] = state["context"]
+
+        return {
+            "status": "ok",
+            "state": baseline_state,
+            "integrations": state["context"]["integration_totals"],
+        }
+
+    @app.post("/civilization/score")
+    async def civilization_score(payload: dict | None = None):
+        runtime = get_civilization_runtime_bundle(app)
+        target = payload or {}
+
+        if isinstance(target.get("state"), dict):
+            state = target["state"]
+        else:
+            health = await collect_global_health()
+            state = _build_civilization_state_from_integrations(health=health, payload=target)
+
+        score = runtime["score"].evaluate(state)
+        decision = runtime["decision"].decide(score, state)
+
+        return {
+            "status": "ok",
+            "score": score,
+            "decision_preview": decision,
+        }
+
+    @app.post("/civilization/snapshot")
+    async def civilization_snapshot(payload: dict | None = None):
+        runtime = get_civilization_runtime_bundle(app)
+        target = payload or {}
+
+        if isinstance(target.get("state"), dict):
+            state = target["state"]
+        else:
+            health = await collect_global_health()
+            state = _build_civilization_state_from_integrations(health=health, payload=target)
+
+        score = runtime["score"].evaluate(state)
+        decision = runtime["decision"].decide(score, state)
+        snapshot = runtime["snapshot"].capture(
+            state=state,
+            score=score,
+            decision=decision,
+            metadata=target.get("metadata") if isinstance(target.get("metadata"), dict) else {},
+        )
+
+        return {
+            "status": "captured",
+            "snapshot": snapshot,
+        }
+
+    @app.post("/civilization/run")
+    async def civilization_run(payload: dict | None = None):
+        runtime = get_civilization_runtime_bundle(app)
+        target = payload or {}
+        metadata = target.get("metadata") if isinstance(target.get("metadata"), dict) else {}
+        metadata = {"entrypoint": "civilization.run", **metadata}
+
+        pulses = target.get("pulses")
+        if isinstance(pulses, list) and pulses:
+            normalized_pulses = [item for item in pulses if isinstance(item, dict)]
+            if not normalized_pulses:
+                raise HTTPException(status_code=422, detail="pulses deve conter ao menos um estado válido")
+            pipeline_result = runtime["pipeline"].run(pulses=normalized_pulses, metadata=metadata)
+            return {
+                "status": "ok",
+                "mode": "pipeline",
+                "pipeline": pipeline_result,
+            }
+
+        if isinstance(target.get("state"), dict):
+            state = target["state"]
+        else:
+            health = await collect_global_health()
+            state = _build_civilization_state_from_integrations(health=health, payload=target)
+
+        cycle = runtime["kernel"].run_cycle(external_state=state, metadata=metadata)
+        return {
+            "status": "ok",
+            "mode": "kernel",
+            "cycle": cycle,
+        }
+
+    @app.get("/civilization/dashboard")
+    async def civilization_dashboard(limit: int = Query(default=20, ge=1, le=200)):
+        runtime = get_civilization_runtime_bundle(app)
+        history_items = runtime["snapshot"].list_recent(limit=limit)
+
+        if not history_items:
+            state = _build_civilization_state_from_integrations(health=await collect_global_health())
+            runtime["kernel"].run_cycle(
+                external_state=state,
+                metadata={"seeded": True, "entrypoint": "civilization.dashboard"},
+            )
+            history_items = runtime["snapshot"].list_recent(limit=limit)
+
+        latest = history_items[-1] if history_items else None
+        scores = [
+            float(item.get("score", {}).get("civilization_score", 0.0))
+            for item in history_items
+            if isinstance(item, dict)
+        ]
+        avg_score = sum(scores) / len(scores) if scores else 0.0
+
+        mode_distribution = Counter(
+            str(item.get("decision", {}).get("decision_mode", "UNKNOWN"))
+            for item in history_items
+            if isinstance(item, dict)
+        )
+
+        return {
+            "status": "ok",
+            "dashboard": {
+                "latest_snapshot": latest,
+                "average_score": round(avg_score, 4),
+                "score_points": len(scores),
+                "mode_distribution": dict(mode_distribution),
+                "recent_scores": scores[-10:],
+            },
+        }
+
+    @app.get("/civilization/history")
+    async def civilization_history(
+        limit: int = Query(default=50, ge=1, le=500),
+        decision_mode: str | None = Query(default=None),
+    ):
+        runtime = get_civilization_runtime_bundle(app)
+        items = list(reversed(runtime["snapshot"].list_recent(limit=limit)))
+
+        if decision_mode:
+            normalized_mode = normalize_dispatch_intent(decision_mode).upper()
+            items = [
+                item
+                for item in items
+                if str(item.get("decision", {}).get("decision_mode", "")).upper() == normalized_mode
+            ]
+
+        return {
+            "status": "ok",
+            "count": len(items),
+            "limit": limit,
+            "items": items,
+        }
+
+    @app.get("/civilization/earth/state")
+    async def civilization_earth_state():
+        runtime = get_civilization_runtime_bundle(app)
+        earth_snapshot = runtime["earth_snapshot"]
+        state = earth_snapshot.get_state()
+
+        return {
+            "status": "ok",
+            "state": state,
+            "history": {
+                "events": earth_snapshot.history_size(),
+                "latest_event_id": earth_snapshot.latest_event_id(),
+            },
+        }
+
+    @app.post("/civilization/earth/replay")
+    async def civilization_earth_replay(payload: dict | None = None):
+        runtime = get_civilization_runtime_bundle(app)
+        earth_snapshot = runtime["earth_snapshot"]
+        target = payload or {}
+
+        if isinstance(target.get("state"), dict):
+            earth_snapshot.capture(
+                target["state"],
+                metadata={
+                    "source": "civilization.earth.replay",
+                    "metadata": target.get("metadata") if isinstance(target.get("metadata"), dict) else {},
+                },
+            )
+
+        try:
+            replay_result = earth_snapshot.replay(until_event_id=target.get("until_event_id"))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        return {
+            "status": "ok",
+            "replay": replay_result,
+            "history": {
+                "events": earth_snapshot.history_size(),
+                "latest_event_id": earth_snapshot.latest_event_id(),
+            },
+        }
+
+    @app.post("/earth/runtime/initialize")
+    async def earth_runtime_initialize(payload: EarthRuntimeInitializeRequest):
+        runtime = get_earth_runtime_entry(app)
+        return runtime.initialize(seed=payload.seed)
+
+    @app.post("/earth/event")
+    async def earth_event(payload: EarthRuntimeEventRequest):
+        event_type = payload.event_type.strip()
+        if not event_type:
+            raise HTTPException(status_code=422, detail="event_type is required")
+
+        runtime = get_earth_runtime_entry(app)
+        return runtime.post_event(event_type, payload.payload)
+
+    @app.get("/earth/state")
+    async def earth_state():
+        runtime = get_earth_runtime_entry(app)
+        return runtime.get_state()
+
+    @app.get("/earth/state/snapshot")
+    async def earth_state_snapshot():
+        runtime = get_earth_runtime_entry(app)
+        return runtime.get_snapshot()
+
+    @app.get("/earth/history")
+    async def earth_history():
+        runtime = get_earth_runtime_entry(app)
+        return runtime.get_history()
+
+    @app.post("/earth/scenario/run")
+    async def earth_scenario_run(payload: EarthRuntimeScenarioRunRequest):
+        runtime = get_earth_runtime_entry(app)
+        return runtime.run_scenario(payload.name, payload.events)
+
+    @app.get("/earth/health")
+    async def earth_health():
+        runtime = get_earth_runtime_entry(app)
+        return runtime.health()
+
+    @app.get("/earth/routes")
+    async def earth_routes():
+        return {
+            "module": "earth_runtime",
+            "prefix": "/earth",
+            "routes": [
+                "POST /earth/runtime/initialize",
+                "POST /earth/event",
+                "GET /earth/state",
+                "GET /earth/state/snapshot",
+                "GET /earth/history",
+                "POST /earth/scenario/run",
+                "GET /earth/health",
+                "GET /earth/routes",
+            ],
+        }
+
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     app.mount("/baixar-pdf", StaticFiles(directory=str(REPORTS_DIR)), name="relatorios")
@@ -1820,6 +2393,19 @@ def create_application() -> FastAPI:
                     f"POST {settings.GATEWAY_PREFIX}/pd/processes/audit-validate",
                     f"POST {settings.GATEWAY_PREFIX}/pd/processes/john-interpret",
                     f"POST {settings.GATEWAY_PREFIX}/pd/processes/metrics",
+                ],
+            },
+            "earth_runtime": {
+                "prefix": "/earth",
+                "routes": [
+                    "POST /earth/runtime/initialize",
+                    "POST /earth/event",
+                    "GET /earth/state",
+                    "GET /earth/state/snapshot",
+                    "GET /earth/history",
+                    "POST /earth/scenario/run",
+                    "GET /earth/health",
+                    "GET /earth/routes",
                 ],
             },
         }
