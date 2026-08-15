@@ -22,6 +22,18 @@ class GlobalDecisionRequest(BaseModel):
     payload: Optional[Dict[str, Any]] = None
 
 
+class GlobalLineageRequest(BaseModel):
+    continente_origem: Optional[str] = None
+    event_id: Optional[str] = None
+    trace_id: Optional[str] = None
+    decision_id: Optional[str] = None
+    execution_id: Optional[str] = None
+    impact_id: Optional[str] = None
+    continente_destino: Optional[str] = None
+    continent_path: Optional[list[str]] = None
+    twin_id: Optional[str] = None
+
+
 @router.get("/global/state")
 def global_state():
     return global_state_runtime.get_state()
@@ -52,6 +64,16 @@ def global_decision(payload: GlobalDecisionRequest):
     return global_state_runtime.register_decision(decision)
 
 
+@router.post("/global/lineage")
+def global_lineage(payload: GlobalLineageRequest):
+    return global_state_runtime.validate_global_lineage(**payload.model_dump(exclude_none=True))
+
+
+@router.post("/global/validate-lineage")
+def global_validate_lineage(payload: GlobalLineageRequest):
+    return global_state_runtime.validate_global_lineage(**payload.model_dump(exclude_none=True))
+
+
 @router.get("/global/replay")
 def global_replay(trace_id: Optional[str] = None):
     return global_state_runtime.replay(trace_id=trace_id)
@@ -67,6 +89,8 @@ def global_routes():
             "GET /global/state/snapshot",
             "POST /global/event",
             "POST /global/decision",
+            "POST /global/lineage",
+            "POST /global/validate-lineage",
             "GET /global/replay",
             "GET /global/routes",
         ],

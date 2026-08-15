@@ -4,6 +4,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from runtime.global_causal_lineage_runtime import global_causal_lineage_runtime as _default_global_lineage
 from runtime.global_federation_runtime import GlobalFederationRuntime
 from runtime.global_federation_runtime import global_federation_runtime as _default_federation
 
@@ -19,6 +20,7 @@ class GlobalStateRuntime:
 
     def __init__(self, federation: Optional[GlobalFederationRuntime] = None) -> None:
         self._federation = federation or _default_federation
+        self._global_lineage = _default_global_lineage
         self._continents: List[str] = []
         self._active_decisions: List[Dict[str, Any]] = []
 
@@ -80,6 +82,9 @@ class GlobalStateRuntime:
 
     def replay(self, trace_id: Optional[str] = None) -> Dict[str, Any]:
         return self._federation.replay(trace_id=trace_id)
+
+    def validate_global_lineage(self, **kwargs: Any) -> Dict[str, Any]:
+        return self._global_lineage.validate_global_lineage(**kwargs)
 
     def get_snapshot(self, trace_id: Optional[str] = None) -> Dict[str, Any]:
         state = self.get_state()
