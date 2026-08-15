@@ -366,7 +366,7 @@ class CausalLineageRuntime:
             else:
                 reasons.append(f"missing_or_out_of_order_monolith:{name}")
 
-        reconciliation_id = next((record.get("reconciliation_id", record.get("twin_reconciliation_id")) for record in records if record.get("reconciliation_id") or record.get("twin_reconciliation_id")), None)
+        reconciliation_id = next((record.get("reconciliation_id") or record.get("twin_reconciliation_id") for record in records if record.get("reconciliation_id") or record.get("twin_reconciliation_id")), None)
         reconciliation_event_id = next((record.get("reconciliation_event_id", reconciliation_id) for record in records if record.get("reconciliation_event_id") or record.get("twin_reconciliation_id") or record.get("reconciliation_id")), None)
         lineage_valid = not reasons
         replay_valid = bool(records) and not any(reason in reasons for reason in ("sequence_break", "event_store_mission_ledger_divergence"))
@@ -436,7 +436,7 @@ class CausalLineageRuntime:
         records = self.history(trace_id)
         validation = self.validate(trace_id)
         latest = records[-1] if records else {}
-        reconciliation_id = next((record.get("reconciliation_id", record.get("twin_reconciliation_id")) for record in records if record.get("reconciliation_id") or record.get("twin_reconciliation_id")), None)
+        reconciliation_id = next((record.get("reconciliation_id") or record.get("twin_reconciliation_id") for record in records if record.get("reconciliation_id") or record.get("twin_reconciliation_id")), None)
         return {
             "event_id": records[0].get("event_id") if records else None,
             "trace_id": trace_id,
