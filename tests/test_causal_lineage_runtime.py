@@ -155,6 +155,7 @@ def test_reconstruct_wave48_requires_and_returns_complete_chain() -> None:
     assert result["event_id"] == "evt-cont-0048-001"
     assert result["decision_id"] == "decision-cont-0048-001"
     assert result["execution_id"] == "exec-cont-0048-001"
+    assert result["reconciliation_id"] == "twinrec-cont-0048-001"
     assert result["reconciliation_event_id"] == "recon-event-cont-0048-001"
     assert result["lineage_valid"] is True
     assert result["idempotency_valid"] is True
