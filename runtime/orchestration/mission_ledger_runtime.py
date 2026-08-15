@@ -28,16 +28,51 @@ class MissionLedgerRuntime:
         else:
             self.event_store = None
 
-    def _append_event(self, aggregate_id: str, event_type: str, payload: dict):
+    def _append_event(
+        self,
+        aggregate_id: str,
+        event_type: str,
+        payload: dict,
+        correlation_id: Optional[str] = None,
+        causation_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
+    ):
         if self.event_store:
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    loop.create_task(self.event_store.append(aggregate_id, event_type, payload))
+                    loop.create_task(
+                        self.event_store.append(
+                            aggregate_id,
+                            event_type,
+                            payload,
+                            correlation_id=correlation_id,
+                            causation_id=causation_id,
+                            trace_id=trace_id,
+                        )
+                    )
                 else:
-                    loop.run_until_complete(self.event_store.append(aggregate_id, event_type, payload))
+                    loop.run_until_complete(
+                        self.event_store.append(
+                            aggregate_id,
+                            event_type,
+                            payload,
+                            correlation_id=correlation_id,
+                            causation_id=causation_id,
+                            trace_id=trace_id,
+                        )
+                    )
             except RuntimeError:
-                asyncio.run(self.event_store.append(aggregate_id, event_type, payload))
+                asyncio.run(
+                    self.event_store.append(
+                        aggregate_id,
+                        event_type,
+                        payload,
+                        correlation_id=correlation_id,
+                        causation_id=causation_id,
+                        trace_id=trace_id,
+                    )
+                )
 
     def _generate_hash(self, record: Dict[str, Any]) -> str:
         record_string = json.dumps(record, sort_keys=True)
@@ -87,6 +122,36 @@ class MissionLedgerRuntime:
         )
         
         return record_hash
+
+    def record_lineage_event(self, entry: Dict[str, Any]) -> str:
+        """Records a causal lineage entry without generating replacement IDs."""
+        record_data = {
+            "quem": entry.get("phase", "lineage"),
+            "quando": entry.get("recorded_at", datetime.utcnow().isoformat()),
+            "porque": entry.get("event_type", "CAUSAL_LINEAGE_EVENT"),
+            "resultado": {
+                "event_id": entry.get("event_id"),
+                "trace_id": entry.get("trace_id"),
+                "decision_id": entry.get("decision_id"),
+                "execution_id": entry.get("execution_id"),
+                "twin_reconciliation_id": entry.get("twin_reconciliation_id"),
+                "parent_event_id": entry.get("parent_event_id"),
+                "causation_id": entry.get("causation_id"),
+                "sequence": entry.get("sequence", 0),
+                "metadata": entry.get("metadata", {}),
+            },
+        }
+        record = {**record_data, "hash": self._generate_hash(record_data)}
+        self.ledger.append(record)
+        self._append_event(
+            aggregate_id=entry["trace_id"],
+            event_type=entry.get("event_type", "CAUSAL_LINEAGE_EVENT"),
+            payload={"causal_lineage": entry},
+            correlation_id=entry["trace_id"],
+            causation_id=entry.get("causation_id"),
+            trace_id=entry["trace_id"],
+        )
+        return record["hash"]
 
     def get_ledger(self) -> List[Dict[str, Any]]:
         return self.ledger

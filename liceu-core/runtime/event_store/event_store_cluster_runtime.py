@@ -80,3 +80,15 @@ class EventStoreClusterRuntime:
             return [dict(r) for r in records]
         
         return []
+
+    async def get_events_by_trace(self, trace_id: str) -> List[Dict[str, Any]]:
+        """Retrieves the complete causal stream for a trace."""
+        if self.db_pool:
+            query = """
+                SELECT * FROM event_store
+                WHERE trace_id = $1
+                ORDER BY created_at ASC
+            """
+            records = await self.db_pool.fetch(query, trace_id)
+            return [dict(record) for record in records]
+        return []
