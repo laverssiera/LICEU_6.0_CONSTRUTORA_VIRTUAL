@@ -17,6 +17,7 @@ from runtime.federation.federation_runtime import router as federation_runtime_r
 from runtime.civilization.civilization_state_runtime import router as state_runtime_router
 from runtime.planetary.planet_runtime_endpoint import router as planet_runtime_router
 from runtime.planetary.earth_runtime import earth_router
+from runtime.global_state_endpoint import router as global_state_router
 
 app = FastAPI(title="Civilization Kernel - LICEU 6.0", version="6.0.0")
 
@@ -28,6 +29,7 @@ app.include_router(federation_runtime_router)
 app.include_router(state_runtime_router)
 app.include_router(planet_runtime_router)
 app.include_router(earth_router)
+app.include_router(global_state_router)
 
 @app.get("/")
 def root():
