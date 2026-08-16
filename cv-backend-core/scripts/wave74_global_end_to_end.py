@@ -15,6 +15,7 @@ from runtime.global_federation_runtime import GlobalFederationRuntime
 from runtime.orchestration.mission_ledger_runtime import MissionLedgerRuntime
 from runtime.planetary.planetary_state_runtime import PlanetaryStateRuntime
 from runtime.contracts.contract_registry_runtime import registry as contract_registry_singleton
+from runtime.post_planetary.interplanetary_federation_runtime import InterplanetaryFederationRuntime
 
 
 def _envelope(
@@ -44,6 +45,7 @@ def run() -> Dict[str, Any]:
     planetary = PlanetaryStateRuntime()
     continental = ContinentalStateRuntime()
     twin = CivilizationGlobalTwinRuntime()
+    interplanetary = InterplanetaryFederationRuntime()
 
     contract_registry = contract_registry_singleton.__class__()
     contract_id = contract_registry.register_contract(
@@ -51,10 +53,26 @@ def run() -> Dict[str, Any]:
         {"scope": "INTERPLANETARY->PLANETARY->CONTINENTAL->GLOBAL->CIVILIZATION"},
     )
 
+    interplanetary_root = interplanetary.federate(
+        event_type="TWIN_CREATED",
+        payload={"case": "federated_scale_consistency_gate", "scope": "INTERPLANETARY"},
+        trace_id=trace_id,
+    )
+    interplanetary_baseline = interplanetary.snapshot()
+    interplanetary.federate(
+        event_type="CORRIDOR_INTERRUPTED",
+        payload={"energy": "DISRUPTED", "logistics": "DISRUPTED"},
+        trace_id=trace_id,
+        parent_event_id=interplanetary_root["event_id"],
+    )
+    interplanetary.rollback(interplanetary_baseline)
+    interplanetary_recovery = interplanetary.recover(interplanetary_baseline)
+
     root = federation.federate_event(
         event_type="DIGITAL_TWIN_UPDATED",
         continent="GLOBAL",
         trace_id=trace_id,
+        event_id=interplanetary_root["event_id"],
         payload={
             "case": "federated_scale_consistency_gate",
             "scope": "INTERPLANETARY",
@@ -178,10 +196,16 @@ def run() -> Dict[str, Any]:
             replay["status"] == "PASS",
             second_replay["status"] == "PASS",
             state_replayed,
+            interplanetary.replay()["matches_current_state"],
+            interplanetary_recovery["event_type"] == "INTERPLANETARY_RECOVERY_COMPLETED",
             contract_registry.get_contract(contract_id)["version"] == "1.0.0",
             civilization_state["digital_twin_status"] == "RECONCILED",
         ]) else "FAIL",
-        "interplanetary": "PASS",
+        "interplanetary": "PASS" if (
+            interplanetary.replay()["matches_current_state"]
+            and interplanetary_recovery["event_type"] == "INTERPLANETARY_RECOVERY_COMPLETED"
+            and interplanetary_recovery["caused_by"] == interplanetary_root["event_id"]
+        ) else "FAIL",
         "planetary": "PASS" if state_replayed else "FAIL",
         "continental": "PASS" if continental.get_snapshot()["replay_integrity"] == "PASS" else "FAIL",
         "global": "PASS" if global_state["active_events"] else "FAIL",
@@ -192,8 +216,15 @@ def run() -> Dict[str, Any]:
         "replay_valid": replay["gates"]["replay_valid"] and second_replay["gates"]["replay_valid"],
         "audit_valid": replay["gates"]["audit_valid"] and ledger.verify_integrity(),
         "idempotency_valid": second_replay["event_id"] == event_id and len(lineage.history(trace_id)) == len(records) + 1,
-        "rollback_valid": any(item["event_type"] == "GLOBAL_ROLLBACK_APPLIED" for item in records),
-        "recovery_valid": any(item["event_type"] == "GLOBAL_RECOVERY_COMPLETED" for item in records),
+        "rollback_valid": (
+            interplanetary.snapshot() != interplanetary_baseline
+            and interplanetary_recovery["caused_by"] == interplanetary_root["event_id"]
+            and any(item["event_type"] == "GLOBAL_ROLLBACK_APPLIED" for item in records)
+        ),
+        "recovery_valid": (
+            interplanetary_recovery["event_type"] == "INTERPLANETARY_RECOVERY_COMPLETED"
+            and any(item["event_type"] == "GLOBAL_RECOVERY_COMPLETED" for item in records)
+        ),
         "cross_scale_lineage_valid": all(item.get("payload", {}).get("caused_by") == event_id for item in records),
         "digital_twin_reconciled": civilization_state["digital_twin_status"] == "RECONCILED",
         "event_id": event_id,

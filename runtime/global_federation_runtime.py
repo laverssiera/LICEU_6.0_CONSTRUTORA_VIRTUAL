@@ -60,10 +60,11 @@ class GlobalFederationRuntime:
         continent: str,
         payload: Optional[Dict[str, Any]] = None,
         trace_id: Optional[str] = None,
+        event_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         payload = payload or {}
         trace_id = trace_id or str(uuid4())
-        event_id = str(uuid4())
+        event_id = event_id or str(uuid4())
 
         context = self.causal_lineage.start_lineage(
             event_id=event_id,
