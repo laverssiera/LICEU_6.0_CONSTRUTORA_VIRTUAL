@@ -168,6 +168,7 @@ class ContinentalStateRuntime:
         return {"status": "APPLIED", "event_type": event_type, "state_checksum": self.current_checksum()}
 
     def _persist_snapshot(self, reason: str, payload: Dict[str, Any]) -> None:
+        self._state["domains"]["snapshots"]["total"] = len(self._history) + 1
         snapshot = self.get_state()
         self._history.append(
             {
@@ -178,7 +179,6 @@ class ContinentalStateRuntime:
                 "checksum": self._checksum(snapshot),
             }
         )
-        self._state["domains"]["snapshots"]["total"] = len(self._history)
 
     def get_state(self) -> Dict[str, Any]:
         return deepcopy(self._state)
