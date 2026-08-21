@@ -52,7 +52,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://admin:password123@db_core_os:5432/liceu_core_os
+      DATABASE_URL: postgresql://${CORE_DB_USER:-admin}:${CORE_DB_PASSWORD:-password123}@db_core_os:5432/${CORE_DB_NAME:-liceu_core_os}
+      CANONICAL_EVENT_STORE_DATABASE_URL: postgresql://${CORE_DB_USER:-admin}:${CORE_DB_PASSWORD:-password123}@db_core_os:5432/${CORE_DB_NAME:-liceu_core_os}
       REDIS_URL: redis://redis:6379/0
       NETWORK_NAME: liceu-net
       PUBLIC_PROXY_ENTRYPOINT: http://localhost:8080
@@ -236,11 +237,11 @@ services:
     <<: *postgres-template
     container_name: db_core_os
     environment:
-      POSTGRES_DB: liceu_core_os
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: ${CORE_DB_NAME:-liceu_core_os}
+      POSTGRES_USER: ${CORE_DB_USER:-admin}
+      POSTGRES_PASSWORD: ${CORE_DB_PASSWORD:-password123}
     ports:
-      - "5542:5432"
+      - "${CORE_DB_HOST_PORT:-5542}:5432"
     volumes:
       - db_core_os_data:/var/lib/postgresql/data
 

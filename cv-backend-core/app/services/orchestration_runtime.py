@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.internal.event_bus import InMemoryEventBus, RedisEventBus
 from app.models.orchestration import (
+    AuditEvent,
     AuditLog,
     EventLog,
+    EventRegistry,
     MonolithRegistry,
     WorkDependency,
     WorkItem,
@@ -81,21 +83,99 @@ class WorkService:
 
 
 class EventService:
+    CONTRACT_FIELDS = (
+        "event_id",
+        "source_event_id",
+        "trace_id",
+        "parent_event_id",
+        "causation_id",
+        "decision_id",
+        "governance_decision_id",
+        "execution_id",
+        "artifact_id",
+        "event_type",
+        "scope",
+        "producer",
+        "contract_id",
+        "contract_version",
+        "timestamp",
+        "payload",
+    )
+
     def __init__(self, db: Session, bus: RedisEventBus | InMemoryEventBus) -> None:
         self.db = db
         self.bus = bus
 
     def emit(self, event_type: str, payload: dict[str, Any], source: str = "core_os") -> EventLog:
-        event = EventLog(event_type=event_type, payload=payload, source=source)
+        canonical_payload = self._canonical_payload(event_type, payload, source)
+        event = EventLog(event_type=event_type, payload=canonical_payload, source=source)
         self.db.add(event)
+        self.db.flush()
+        self._register_event_contract(event_type, source)
+        self._audit_event_store_write(event)
         self.db.commit()
         self.db.refresh(event)
 
-        self.bus.publish(event_type, payload)
+        self.bus.publish(event_type, canonical_payload)
         return event
 
     def list(self, limit: int = 200) -> list[EventLog]:
         return self.db.query(EventLog).order_by(EventLog.created_at.desc()).limit(limit).all()
+
+    def _canonical_payload(self, event_type: str, payload: dict[str, Any], source: str) -> dict[str, Any]:
+        incoming = dict(payload or {})
+        canonical = {
+            "event_id": incoming.get("event_id"),
+            "source_event_id": incoming.get("source_event_id"),
+            "trace_id": incoming.get("trace_id"),
+            "parent_event_id": incoming.get("parent_event_id"),
+            "causation_id": incoming.get("causation_id"),
+            "decision_id": incoming.get("decision_id"),
+            "governance_decision_id": incoming.get("governance_decision_id"),
+            "execution_id": incoming.get("execution_id"),
+            "artifact_id": incoming.get("artifact_id"),
+            "event_type": incoming.get("event_type") or event_type,
+            "scope": incoming.get("scope") or "global",
+            "producer": incoming.get("producer") or source,
+            "contract_id": incoming.get("contract_id") or event_type,
+            "contract_version": incoming.get("contract_version") or "v1",
+            "timestamp": incoming.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+        }
+        canonical["payload"] = incoming.get("payload", incoming)
+        for key, value in incoming.items():
+            if key not in canonical:
+                canonical[key] = value
+        return canonical
+
+    def _register_event_contract(self, event_type: str, source: str) -> None:
+        registry_item = self.db.query(EventRegistry).filter(EventRegistry.event_name == event_type).first()
+        if registry_item:
+            registry_item.producer = registry_item.producer or source
+            self.db.add(registry_item)
+            return
+        self.db.add(EventRegistry(event_name=event_type, producer=source, consumers=[]))
+
+    def _audit_event_store_write(self, event: EventLog) -> None:
+        self.db.add(
+            AuditEvent(
+                source="canonical_event_store",
+                entity_id=event.id,
+                entity_type="event",
+                event_type="event_store.write",
+                audit_domain="event_store",
+                severity="LOW",
+                description=f"Canonical event persisted: {event.event_type}",
+                payload={
+                    "event_id": (event.payload or {}).get("event_id") or event.id,
+                    "event_type": event.event_type,
+                    "producer": (event.payload or {}).get("producer") or event.source,
+                    "trace_id": (event.payload or {}).get("trace_id"),
+                    "parent_event_id": (event.payload or {}).get("parent_event_id"),
+                    "causation_id": (event.payload or {}).get("causation_id"),
+                    "artifact_id": (event.payload or {}).get("artifact_id"),
+                },
+            )
+        )
 
 
 class RoutingEngine:

@@ -1197,9 +1197,24 @@ def serialize_work_item(work: WorkItem) -> Dict[str, Any]:
 
 
 def serialize_event(event: EventLog) -> Dict[str, Any]:
+    payload = event.payload or {}
     return {
         "id": event.id,
+        "event_id": payload.get("event_id") or event.id,
+        "source_event_id": payload.get("source_event_id"),
+        "trace_id": payload.get("trace_id"),
+        "parent_event_id": payload.get("parent_event_id"),
+        "causation_id": payload.get("causation_id"),
+        "decision_id": payload.get("decision_id"),
+        "governance_decision_id": payload.get("governance_decision_id"),
+        "execution_id": payload.get("execution_id"),
+        "artifact_id": payload.get("artifact_id"),
         "event_type": event.event_type,
+        "scope": payload.get("scope"),
+        "producer": payload.get("producer") or event.source,
+        "contract_id": payload.get("contract_id"),
+        "contract_version": payload.get("contract_version"),
+        "timestamp": payload.get("timestamp") or (event.created_at.isoformat() if event.created_at else None),
         "payload": event.payload,
         "source": event.source,
         "created_at": event.created_at.isoformat() if event.created_at else None,

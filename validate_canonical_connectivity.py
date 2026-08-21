@@ -8,7 +8,7 @@ Etapas de validação:
 2. Conectividade TCP ao host:port
 3. Conexão PostgreSQL
 4. Leitura do banco liceu_core_os na schema public
-5. Verificação de immutable_events
+5. Verificação de public.events
 6. Recuperação de eventos específicos (evt-archimedes-001, economic-impact-8823098e873caa50e378325c9)
 """
 
@@ -49,6 +49,11 @@ class CanonicalConnectivityValidator:
             "tcp_connection_valid": False,
             "postgres_connection_valid": False,
             "canonical_read_valid": False,
+            "canonical_event_table": "public.events",
+            "canonical_repository_valid": False,
+            "registry_valid": False,
+            "audit_valid": False,
+            "lineage_fields_supported": False,
             "w89_event_visible": False,
             "w91_event_visible": False,
             "status": "PENDING",
@@ -114,7 +119,6 @@ class CanonicalConnectivityValidator:
             if result and result[0] == 1:
                 print(f"    ✓ PostgreSQL connection OK")
                 self.results["postgres_connection_valid"] = True
-                conn.close()
                 return conn
             else:
                 error_msg = "PostgreSQL connection FAILED: SELECT 1 retornou resultado inesperado"
@@ -139,7 +143,7 @@ class CanonicalConnectivityValidator:
         if not conn:
             return False
 
-        print(f"\n[4/6] Validando leitura de immutable_events na schema {self.db_schema}...")
+        print(f"\n[4/6] Validando leitura de public.events na schema {self.db_schema}...")
         try:
             cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             
@@ -147,38 +151,85 @@ class CanonicalConnectivityValidator:
             cursor.execute(f"""
                 SELECT EXISTS (
                     SELECT 1 FROM information_schema.tables 
-                    WHERE table_schema = %s AND table_name = 'immutable_events'
+                    WHERE table_schema = %s AND table_name = 'events'
                 )
             """, (self.db_schema,))
             
             table_exists = cursor.fetchone()[0]
             if not table_exists:
-                error_msg = f"Tabela immutable_events não existe em {self.db_schema}"
+                error_msg = f"Tabela events não existe em {self.db_schema}"
                 print(f"    ✗ {error_msg}")
                 self.results["errors"].append(error_msg)
                 cursor.close()
                 return False
 
             # Contar registros
-            cursor.execute(f"SELECT COUNT(*) FROM {self.db_schema}.immutable_events")
+            cursor.execute(f"SELECT COUNT(*) FROM {self.db_schema}.events")
             count = cursor.fetchone()[0]
-            print(f"    ✓ immutable_events encontrada: {count} registros")
+            print(f"    ✓ public.events encontrada: {count} registros")
             self.results["canonical_read_valid"] = True
+            self.results["canonical_repository_valid"] = True
+
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = %s AND table_name = 'event_registry'
+                )
+            """, (self.db_schema,))
+            self.results["registry_valid"] = bool(cursor.fetchone()[0])
+
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = %s AND table_name = 'audit_events'
+                )
+            """, (self.db_schema,))
+            self.results["audit_valid"] = bool(cursor.fetchone()[0])
+
+            cursor.execute(f"""
+                SELECT payload
+                FROM {self.db_schema}.events
+                ORDER BY created_at DESC
+                LIMIT 50
+            """)
+            contract_fields = {
+                "event_id",
+                "source_event_id",
+                "trace_id",
+                "parent_event_id",
+                "causation_id",
+                "decision_id",
+                "governance_decision_id",
+                "execution_id",
+                "artifact_id",
+                "event_type",
+                "scope",
+                "producer",
+                "contract_id",
+                "contract_version",
+                "timestamp",
+                "payload",
+            }
+            observed_fields = set()
+            for row in cursor.fetchall():
+                if isinstance(row["payload"], dict):
+                    observed_fields.update(row["payload"].keys())
+            self.results["lineage_fields_supported"] = contract_fields.issubset(observed_fields) or count == 0
 
             # Etapa 5: Procurar por eventos específicos
             print(f"\n[5/6] Procurando por eventos W89 (ARCHIMEDES) e W91 (ECONOMIC)...")
             
             # Buscar evento evt-archimedes-001
             cursor.execute(f"""
-                SELECT event_id, event_name, data, created_at 
-                FROM {self.db_schema}.immutable_events 
-                WHERE event_id = %s OR event_name LIKE %s
+                SELECT id, event_type, payload, created_at 
+                FROM {self.db_schema}.events 
+                WHERE id = %s OR event_type ILIKE %s OR payload::text ILIKE %s
                 LIMIT 1
-            """, ('evt-archimedes-001', '%archimedes%'))
+            """, ('evt-archimedes-001', '%archimedes%', '%evt-archimedes-001%'))
             
             w89_result = cursor.fetchone()
             if w89_result:
-                print(f"    ✓ W89 Event (ARCHIMEDES) encontrado: {w89_result['event_id']}")
+                print(f"    ✓ W89 Event (ARCHIMEDES) encontrado: {w89_result['id']}")
                 self.results["w89_event_visible"] = True
             else:
                 print(f"    ⚠ W89 Event (evt-archimedes-001) não encontrado (pode estar OK se ainda não foi publicado)")
@@ -186,15 +237,15 @@ class CanonicalConnectivityValidator:
 
             # Buscar evento economic-impact
             cursor.execute(f"""
-                SELECT event_id, event_name, data, created_at 
-                FROM {self.db_schema}.immutable_events 
-                WHERE event_id LIKE %s OR event_name LIKE %s
+                SELECT id, event_type, payload, created_at 
+                FROM {self.db_schema}.events 
+                WHERE id LIKE %s OR event_type ILIKE %s OR payload::text ILIKE %s
                 LIMIT 1
-            """, ('%economic-impact%', '%economic%'))
+            """, ('%economic-impact%', '%economic%', '%economic-impact%'))
             
             w91_result = cursor.fetchone()
             if w91_result:
-                print(f"    ✓ W91 Event (ECONOMIC) encontrado: {w91_result['event_id']}")
+                print(f"    ✓ W91 Event (ECONOMIC) encontrado: {w91_result['id']}")
                 self.results["w91_event_visible"] = True
             else:
                 print(f"    ⚠ W91 Event (economic-impact-*) não encontrado (pode estar OK se ainda não foi publicado)")
@@ -232,7 +283,11 @@ class CanonicalConnectivityValidator:
                 
                 # Verificar se db_core_os está na rede
                 containers = network_info[0].get('Containers', {})
-                db_core_os_found = any('db_core_os' in name for name in containers.keys())
+                db_core_os_found = any(
+                    'db_core_os' in container.get('Name', '')
+                    for container in containers.values()
+                    if isinstance(container, dict)
+                )
                 
                 if db_core_os_found:
                     print(f"    ✓ Container db_core_os está na rede liceu-net")
