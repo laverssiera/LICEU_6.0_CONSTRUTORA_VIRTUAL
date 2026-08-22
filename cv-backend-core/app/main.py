@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import sys
 import unicodedata
 import uuid
@@ -53,7 +54,7 @@ from app.models import base
 from app.models.backoffice import BackofficeLead
 from app.models.initiative import Initiative
 from app.models.objective import Objective
-from app.models.orchestration import AuditEvent, AuditLog, EventLog, HealthScore, KanbanCard, MonolithRegistry, WorkItem
+from app.models.orchestration import AuditEvent, AuditLog, EventLog, EventRegistry, HealthScore, KanbanCard, MonolithRegistry, WorkItem
 from app.models.pd_process import PDProcess
 from app.models.plan import Plan
 from app.models.strategy import Strategy
@@ -597,6 +598,25 @@ class EventCreateRequest(BaseModel):
     event_type: str = Field(min_length=3, max_length=120)
     payload: Dict[str, Any] = Field(default_factory=dict)
     source: str = Field(default="api", min_length=2, max_length=50)
+
+
+class FederationEventPublishRequest(BaseModel):
+    event_type: str = Field(min_length=3, max_length=120)
+    source: str = Field(default="federation_api", min_length=2, max_length=50)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    event_id: str | None = Field(default=None, min_length=3, max_length=120)
+    source_event_id: str | None = Field(default=None, min_length=3, max_length=120)
+    trace_id: str | None = Field(default=None, min_length=3, max_length=120)
+    parent_event_id: str | None = Field(default=None, min_length=3, max_length=120)
+    causation_id: str | None = Field(default=None, min_length=3, max_length=120)
+    decision_id: str | None = Field(default=None, min_length=3, max_length=120)
+    governance_decision_id: str | None = Field(default=None, min_length=3, max_length=120)
+    execution_id: str | None = Field(default=None, min_length=3, max_length=120)
+    artifact_id: str | None = Field(default=None, min_length=3, max_length=160)
+    scope: str = Field(default="global", min_length=2, max_length=80)
+    producer: str | None = Field(default=None, min_length=2, max_length=80)
+    contract_id: str | None = Field(default=None, min_length=2, max_length=120)
+    contract_version: str | None = Field(default="v1", min_length=1, max_length=40)
 
 
 class KanbanIngestRequest(BaseModel):
@@ -1219,6 +1239,75 @@ def serialize_event(event: EventLog) -> Dict[str, Any]:
         "source": event.source,
         "created_at": event.created_at.isoformat() if event.created_at else None,
     }
+
+
+def _resolve_canonical_event_store_api_url() -> str | None:
+    configured = os.getenv("CANONICAL_EVENT_STORE_API_URL", "").strip()
+    if configured:
+        return configured.rstrip("/")
+
+    codespace_name = os.getenv("CODESPACE_NAME", "").strip()
+    forwarding_domain = os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "").strip()
+    if codespace_name and forwarding_domain:
+        return f"https://{codespace_name}-8000.{forwarding_domain}"
+
+    return None
+
+
+def _has_federation_scope(identity: UserIdentity) -> bool:
+    return "workspace:internal" in identity.scopes or "workspace:client" in identity.scopes
+
+
+def _ensure_federation_scope(identity: UserIdentity) -> None:
+    if not _has_federation_scope(identity):
+        raise HTTPException(status_code=403, detail="Escopo insuficiente para federação")
+
+
+def _recent_serialized_events(db: Session, *, limit: int = 2000) -> list[dict[str, Any]]:
+    safe_limit = max(1, min(limit, 5000))
+    rows = db.query(EventLog).order_by(EventLog.created_at.desc()).limit(safe_limit).all()
+    return [serialize_event(row) for row in rows]
+
+
+def _resolve_event_identifier(db: Session, identifier: str) -> dict[str, Any] | None:
+    direct = db.query(EventLog).filter(EventLog.id == identifier).first()
+    if direct is not None:
+        return serialize_event(direct)
+    for item in _recent_serialized_events(db, limit=5000):
+        if item.get("event_id") == identifier:
+            return item
+    return None
+
+
+def _filter_federation_events(
+    events: list[dict[str, Any]],
+    *,
+    event_id: str | None = None,
+    source_event_id: str | None = None,
+    event_type: str | None = None,
+    artifact_id: str | None = None,
+    trace_id: str | None = None,
+    scope: str | None = None,
+    producer: str | None = None,
+) -> list[dict[str, Any]]:
+    def matches(item: dict[str, Any]) -> bool:
+        if event_id and str(item.get("event_id") or "") != event_id:
+            return False
+        if source_event_id and str(item.get("source_event_id") or "") != source_event_id:
+            return False
+        if event_type and str(item.get("event_type") or "").lower() != event_type.lower():
+            return False
+        if artifact_id and str(item.get("artifact_id") or "") != artifact_id:
+            return False
+        if trace_id and str(item.get("trace_id") or "") != trace_id:
+            return False
+        if scope and str(item.get("scope") or "").lower() != scope.lower():
+            return False
+        if producer and str(item.get("producer") or "").lower() != producer.lower():
+            return False
+        return True
+
+    return [item for item in events if matches(item)]
 
 
 def should_capture_audit_event(channel: str, event_type: str) -> bool:
@@ -5197,6 +5286,190 @@ def create_application() -> FastAPI:
         sdk = build_liceu_sdk(db, get_event_bus())
         items = sdk.events.list(limit=limit)
         return {"status": "ok", "items": [serialize_event(item) for item in items], "total": len(items)}
+
+    @app.get("/federation/events/health")
+    def federation_events_health(identity: UserIdentity = Depends(get_current_identity)):
+        _ensure_federation_scope(identity)
+        return {
+            "status": "healthy",
+            "transport": "https_api",
+            "canonical_store": "liceu_core_os.public.events",
+            "external_api_url": _resolve_canonical_event_store_api_url(),
+        }
+
+    @app.get("/federation/events/config")
+    def federation_events_config(identity: UserIdentity = Depends(get_current_identity)):
+        _ensure_federation_scope(identity)
+        return {
+            "consumer_configuration_variable": "CANONICAL_EVENT_STORE_API_URL",
+            "CANONICAL_EVENT_STORE_API_URL": _resolve_canonical_event_store_api_url(),
+            "paths": {
+                "publish": "/federation/events/publish",
+                "list": "/federation/events",
+                "by_id": "/federation/events/{event_id}",
+                "by_type": "/federation/events/by-type/{event_type}",
+                "health": "/federation/events/health",
+            },
+        }
+
+    @app.post("/federation/events/publish")
+    def federation_publish_event(
+        payload: FederationEventPublishRequest,
+        db: Session = Depends(get_db),
+        identity: UserIdentity = Depends(get_current_identity),
+    ):
+        _ensure_federation_scope(identity)
+
+        normalized_event_type = payload.event_type.strip()
+        normalized_source = payload.source.strip()
+        normalized_contract_version = str(payload.contract_version or "v1").strip()
+        if not normalized_contract_version:
+            raise HTTPException(status_code=422, detail="contract_version é obrigatória")
+
+        lineage_refs = {
+            "source_event_id": payload.source_event_id,
+            "parent_event_id": payload.parent_event_id,
+            "causation_id": payload.causation_id,
+        }
+        lineage_resolution: dict[str, str] = {}
+        for field_name, candidate_id in lineage_refs.items():
+            if not candidate_id:
+                continue
+            resolved = _resolve_event_identifier(db, candidate_id)
+            if resolved is None:
+                raise HTTPException(status_code=422, detail=f"lineage_reference_not_found:{field_name}:{candidate_id}")
+            lineage_resolution[field_name] = str(resolved.get("event_id") or resolved.get("id"))
+
+        contract_id = payload.contract_id or normalized_event_type
+        contract_entry = db.query(EventRegistry).filter(EventRegistry.event_name == normalized_event_type).first()
+        contract_validation = {
+            "contract_id": contract_id,
+            "contract_version": normalized_contract_version,
+            "registry_known": contract_entry is not None,
+            "valid": bool(contract_id and normalized_contract_version),
+        }
+        if not contract_validation["valid"]:
+            raise HTTPException(status_code=422, detail="contract_validation_failed")
+
+        publish_payload = {
+            "event_id": payload.event_id,
+            "source_event_id": payload.source_event_id,
+            "trace_id": payload.trace_id,
+            "parent_event_id": payload.parent_event_id,
+            "causation_id": payload.causation_id,
+            "decision_id": payload.decision_id,
+            "governance_decision_id": payload.governance_decision_id,
+            "execution_id": payload.execution_id,
+            "artifact_id": payload.artifact_id,
+            "event_type": normalized_event_type,
+            "scope": payload.scope,
+            "producer": payload.producer or normalized_source,
+            "contract_id": contract_id,
+            "contract_version": normalized_contract_version,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "payload": payload.payload,
+        }
+
+        sdk = build_liceu_sdk(db, get_event_bus())
+        event = sdk.events.emit(normalized_event_type, publish_payload, source=normalized_source)
+
+        audit_row = (
+            db.query(AuditEvent)
+            .filter(AuditEvent.entity_id == event.id, AuditEvent.event_type == "event_store.write")
+            .order_by(AuditEvent.detected_at.desc())
+            .first()
+        )
+
+        return {
+            "status": "published",
+            "event": serialize_event(event),
+            "contract_validation": contract_validation,
+            "lineage_validation": {
+                "valid": True,
+                "resolved_references": lineage_resolution,
+            },
+            "audit": serialize_audit_event(audit_row) if audit_row is not None else None,
+        }
+
+    @app.get("/federation/events")
+    def list_federation_events(
+        event_id: str | None = None,
+        source_event_id: str | None = None,
+        event_type: str | None = None,
+        artifact_id: str | None = None,
+        trace_id: str | None = None,
+        scope: str | None = None,
+        producer: str | None = None,
+        limit: int = Query(default=200, ge=1, le=2000),
+        offset: int = Query(default=0, ge=0),
+        db: Session = Depends(get_db),
+        identity: UserIdentity = Depends(get_current_identity),
+    ):
+        _ensure_federation_scope(identity)
+        events = _recent_serialized_events(db, limit=5000)
+        filtered = _filter_federation_events(
+            events,
+            event_id=event_id,
+            source_event_id=source_event_id,
+            event_type=event_type,
+            artifact_id=artifact_id,
+            trace_id=trace_id,
+            scope=scope,
+            producer=producer,
+        )
+
+        sliced = filtered[offset : offset + limit]
+        return {
+            "status": "ok",
+            "total": len(filtered),
+            "returned": len(sliced),
+            "filters": {
+                "event_id": event_id,
+                "source_event_id": source_event_id,
+                "event_type": event_type,
+                "artifact_id": artifact_id,
+                "trace_id": trace_id,
+                "scope": scope,
+                "producer": producer,
+                "limit": limit,
+                "offset": offset,
+            },
+            "items": sliced,
+        }
+
+    @app.get("/federation/events/by-type/{event_type}")
+    def list_federation_events_by_type(
+        event_type: str,
+        limit: int = Query(default=200, ge=1, le=2000),
+        offset: int = Query(default=0, ge=0),
+        db: Session = Depends(get_db),
+        identity: UserIdentity = Depends(get_current_identity),
+    ):
+        _ensure_federation_scope(identity)
+        events = _filter_federation_events(
+            _recent_serialized_events(db, limit=5000),
+            event_type=event_type,
+        )
+        sliced = events[offset : offset + limit]
+        return {
+            "status": "ok",
+            "event_type": event_type,
+            "total": len(events),
+            "returned": len(sliced),
+            "items": sliced,
+        }
+
+    @app.get("/federation/events/{event_id}")
+    def get_federation_event(
+        event_id: str,
+        db: Session = Depends(get_db),
+        identity: UserIdentity = Depends(get_current_identity),
+    ):
+        _ensure_federation_scope(identity)
+        item = _resolve_event_identifier(db, event_id)
+        if item is None:
+            raise HTTPException(status_code=404, detail="Evento não encontrado")
+        return {"status": "ok", "item": item}
 
     @app.post("/kanban/events/ingest")
     def kanban_ingest_event(

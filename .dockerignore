@@ -1,0 +1,48 @@
+# VCS and editor metadata
+.git
+.gitignore
+.github
+.vscode
+
+# Python environments and caches
+.venv
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node and frontend artifacts
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.vite/
+**/.vite/
+dist/
+build/
+coverage/
+
+# Local data and reports not needed for image build
+relatorios/
+relatorios_storage/
+cv-backend-core/relatorios_storage/
+*.db
+*.sqlite
+*.sqlite3
+stress_test_result.json
+
+# Local env and secrets
+.env
+.env*
+!.env.example
+!.env.*.example
+*token*
+
+# Misc
+*.log
+tmp/
+.temp/
+.DS_Store

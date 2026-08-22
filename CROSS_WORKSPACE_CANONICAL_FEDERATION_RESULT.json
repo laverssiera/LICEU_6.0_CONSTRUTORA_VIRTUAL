@@ -1,0 +1,203 @@
+{
+  "gate": "CROSS_WORKSPACE_CANONICAL_FEDERATION",
+  "timestamp": "2026-08-22T01:20:26.268201+00:00",
+  "transport": "https_api",
+  "canonical_store": "liceu_core_os.public.events",
+  "CANONICAL_EVENT_STORE_API_URL": "https://ominous-space-robot-pj7x5vvx6jvx26677-8010.app.github.dev",
+  "external_api_reachable": true,
+  "canonical_read_valid": true,
+  "canonical_publish_valid": true,
+  "w89a_visible": true,
+  "w89b_visible": true,
+  "w90_visible": true,
+  "contract_valid": true,
+  "lineage_valid": true,
+  "audit_valid": true,
+  "consumer_visibility_valid": true,
+  "consumer_configuration_variable": "CANONICAL_EVENT_STORE_API_URL",
+  "status": "PASS",
+  "missing_component": null,
+  "errors": [],
+  "evidence": {
+    "health": {
+      "status_code": 200,
+      "payload": {
+        "status": "healthy",
+        "service": "leme-core",
+        "environment": "development",
+        "database": "up",
+        "event_bus": "redis",
+        "health_interval_seconds": 15
+      }
+    },
+    "federation_health": {
+      "status_code": 200,
+      "payload": {
+        "status": "healthy",
+        "transport": "https_api",
+        "canonical_store": "liceu_core_os.public.events",
+        "external_api_url": "https://ominous-space-robot-pj7x5vvx6jvx26677-8000.app.github.dev"
+      }
+    },
+    "publish": {
+      "status_code": 200,
+      "payload": {
+        "status": "published",
+        "event": {
+          "id": "4403319a-bfb4-4236-bf53-1a1446f3f88c",
+          "event_id": "4403319a-bfb4-4236-bf53-1a1446f3f88c",
+          "source_event_id": "698ecce1-a15c-422a-8b8b-e1d7a00e729a",
+          "trace_id": "trace-cross-workspace-20260822012028",
+          "parent_event_id": null,
+          "causation_id": null,
+          "decision_id": null,
+          "governance_decision_id": null,
+          "execution_id": null,
+          "artifact_id": "W90-CROSS-WORKSPACE-20260822012028",
+          "event_type": "federation.cross_workspace.probe.v1",
+          "scope": "federation",
+          "producer": "cross_workspace_gate",
+          "contract_id": "federation.cross_workspace.probe.v1",
+          "contract_version": "1.0.0",
+          "timestamp": "2026-08-22T01:20:28.908857+00:00",
+          "payload": {
+            "scope": "federation",
+            "payload": {
+              "gate": "CROSS_WORKSPACE_CANONICAL_FEDERATION",
+              "note": "External canonical publication probe",
+              "artifact_class": "CROSS_WORKSPACE_PROBE"
+            },
+            "event_id": null,
+            "producer": "cross_workspace_gate",
+            "trace_id": "trace-cross-workspace-20260822012028",
+            "timestamp": "2026-08-22T01:20:28.908857+00:00",
+            "event_type": "federation.cross_workspace.probe.v1",
+            "artifact_id": "W90-CROSS-WORKSPACE-20260822012028",
+            "contract_id": "federation.cross_workspace.probe.v1",
+            "decision_id": null,
+            "causation_id": null,
+            "execution_id": null,
+            "parent_event_id": null,
+            "source_event_id": "698ecce1-a15c-422a-8b8b-e1d7a00e729a",
+            "contract_version": "1.0.0",
+            "governance_decision_id": null
+          },
+          "source": "cross_workspace_gate",
+          "created_at": "2026-08-22T01:20:28.907341+00:00"
+        },
+        "contract_validation": {
+          "contract_id": "federation.cross_workspace.probe.v1",
+          "contract_version": "1.0.0",
+          "registry_known": true,
+          "valid": true
+        },
+        "lineage_validation": {
+          "valid": true,
+          "resolved_references": {
+            "source_event_id": "698ecce1-a15c-422a-8b8b-e1d7a00e729a"
+          }
+        },
+        "audit": {
+          "id": "b94c321e-b444-4347-a4fd-a40ae9de36bd",
+          "source": "canonical_event_store",
+          "entity_id": "4403319a-bfb4-4236-bf53-1a1446f3f88c",
+          "entity_type": "event",
+          "event_type": "event_store.write",
+          "audit_domain": "event_store",
+          "severity": "LOW",
+          "description": "Canonical event persisted: federation.cross_workspace.probe.v1",
+          "payload": {
+            "event_id": "4403319a-bfb4-4236-bf53-1a1446f3f88c",
+            "producer": "cross_workspace_gate",
+            "trace_id": "trace-cross-workspace-20260822012028",
+            "event_type": "federation.cross_workspace.probe.v1",
+            "artifact_id": "W90-CROSS-WORKSPACE-20260822012028",
+            "causation_id": null,
+            "parent_event_id": null
+          },
+          "detected_at": "2026-08-22T01:20:28.907341+00:00"
+        }
+      }
+    },
+    "audit": {
+      "status_code": 200,
+      "total": 4,
+      "sample": [
+        {
+          "id": "b94c321e-b444-4347-a4fd-a40ae9de36bd",
+          "source": "canonical_event_store",
+          "entity_id": "4403319a-bfb4-4236-bf53-1a1446f3f88c",
+          "entity_type": "event",
+          "event_type": "event_store.write",
+          "audit_domain": "event_store",
+          "severity": "LOW",
+          "description": "Canonical event persisted: federation.cross_workspace.probe.v1",
+          "payload": {
+            "event_id": "4403319a-bfb4-4236-bf53-1a1446f3f88c",
+            "producer": "cross_workspace_gate",
+            "trace_id": "trace-cross-workspace-20260822012028",
+            "event_type": "federation.cross_workspace.probe.v1",
+            "artifact_id": "W90-CROSS-WORKSPACE-20260822012028",
+            "causation_id": null,
+            "parent_event_id": null
+          },
+          "detected_at": "2026-08-22T01:20:28.907341+00:00"
+        },
+        {
+          "id": "782047b2-637d-4d63-91ec-bd3f8200b289",
+          "source": "canonical_event_store",
+          "entity_id": "7a4ce5e2-e2d5-4cc4-b906-951e04d4ce85",
+          "entity_type": "event",
+          "event_type": "event_store.write",
+          "audit_domain": "event_store",
+          "severity": "LOW",
+          "description": "Canonical event persisted: federation.cross_workspace.probe.v1",
+          "payload": {
+            "event_id": "7a4ce5e2-e2d5-4cc4-b906-951e04d4ce85",
+            "producer": "cross_workspace_gate",
+            "trace_id": "trace-cross-workspace-20260822012001",
+            "event_type": "federation.cross_workspace.probe.v1",
+            "artifact_id": "W90-CROSS-WORKSPACE-20260822012001",
+            "causation_id": null,
+            "parent_event_id": null
+          },
+          "detected_at": "2026-08-22T01:20:01.747547+00:00"
+        },
+        {
+          "id": "7f47fc33-c5f6-4c46-82ae-a842131982fa",
+          "source": "canonical_event_store",
+          "entity_id": "4a01c03b-172d-4f4e-a26c-5881ac406045",
+          "entity_type": "event",
+          "event_type": "event_store.write",
+          "audit_domain": "event_store",
+          "severity": "LOW",
+          "description": "Canonical event persisted: federation.cross_workspace.probe.v1",
+          "payload": {
+            "event_id": "4a01c03b-172d-4f4e-a26c-5881ac406045",
+            "producer": "cross_workspace_gate",
+            "trace_id": "trace-cross-workspace-20260822011926",
+            "event_type": "federation.cross_workspace.probe.v1",
+            "artifact_id": "W90-CROSS-WORKSPACE-20260822011926",
+            "causation_id": null,
+            "parent_event_id": null
+          },
+          "detected_at": "2026-08-22T01:19:26.782892+00:00"
+        }
+      ]
+    },
+    "config": {
+      "status_code": 200,
+      "payload": {
+        "consumer_configuration_variable": "CANONICAL_EVENT_STORE_API_URL",
+        "CANONICAL_EVENT_STORE_API_URL": "https://ominous-space-robot-pj7x5vvx6jvx26677-8000.app.github.dev",
+        "paths": {
+          "publish": "/federation/events/publish",
+          "list": "/federation/events",
+          "by_id": "/federation/events/{event_id}",
+          "by_type": "/federation/events/by-type/{event_type}",
+          "health": "/federation/events/health"
+        }
+      }
+    }
+  }
+}

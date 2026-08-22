@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "disk:check": "bash scripts/check_disk_capacity.sh /workspaces",
+    "backend:build:guard": "bash scripts/prebuild_backend_guard.sh",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "infra:up": "docker compose -f infra/runtime/docker-compose.runtime.yml up -d",

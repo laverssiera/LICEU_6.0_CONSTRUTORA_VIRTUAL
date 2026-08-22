@@ -26,3 +26,25 @@ venv/
 relatorios_storage/
 cv-backend-core/relatorios_storage/
 stress_test_result.json
+
+# Cache and temporary build artifacts
+.cache/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.coverage
+coverage/
+dist/
+build/
+.next/
+.vite/
+.turbo/
+tmp/
+.temp/
+
+# Local package manager caches
+.npm/
+.pnpm-store/
+.yarn/

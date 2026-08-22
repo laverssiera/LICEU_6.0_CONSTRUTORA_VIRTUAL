@@ -12,6 +12,12 @@ x-postgres-template: &postgres-template
     timeout: 5s
     retries: 5
 
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   postgres:
     image: postgres:15
@@ -44,6 +50,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - liceu-net
+    logging: *default-logging
 
   backend:
     build:
@@ -69,6 +76,7 @@ services:
       retries: 5
     networks:
       - liceu-net
+    logging: *default-logging
 
   federation-authority:
     build: ./apps/federation-authority
@@ -215,6 +223,7 @@ services:
       - "8222:8222"
     networks:
       - liceu-net
+    logging: *default-logging
 
   redis:
     image: redis:7-alpine
@@ -232,6 +241,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *default-logging
 
   db_core_os:
     <<: *postgres-template
@@ -244,6 +254,7 @@ services:
       - "${CORE_DB_HOST_PORT:-5542}:5432"
     volumes:
       - db_core_os_data:/var/lib/postgresql/data
+    logging: *default-logging
 
   db_cefeida:
     <<: *postgres-template
