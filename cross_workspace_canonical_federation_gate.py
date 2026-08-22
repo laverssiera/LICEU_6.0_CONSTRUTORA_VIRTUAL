@@ -68,24 +68,9 @@ def safe_json(resp: requests.Response) -> dict[str, Any]:
         return {"raw": resp.text}
 
 
-def login(base_url: str, username: str, password: str, portal: str = "workspace") -> tuple[str | None, str | None]:
-    try:
-        resp = requests.post(
-            f"{base_url}/auth/sso/login",
-            json={"username": username, "password": password, "portal": portal},
-            headers=tunnel_headers(),
-            timeout=15,
-        )
-    except Exception as exc:
-        return None, f"login_exception:{exc}"
-
-    if resp.status_code != 200:
-        return None, f"login_failed:{resp.status_code}:{resp.text}"
-
-    token = safe_json(resp).get("access_token")
-    if not token:
-        return None, "login_missing_access_token"
-    return str(token), None
+def service_headers() -> dict[str, str]:
+    secret = os.getenv("CANONICAL_EVENT_STORE_API_SECRET", "").strip()
+    return {"X-Canonical-Service-Secret": secret} if secret else {}
 
 
 def get_json(base_url: str, path: str, headers: dict[str, str] | None = None, params: dict[str, Any] | None = None) -> tuple[int, dict[str, Any]]:
@@ -158,14 +143,13 @@ def main() -> int:
     result["evidence"]["health"] = {"status_code": health_code, "payload": health_payload}
     result["external_api_reachable"] = bool(health_code == 200 and is_external_url(api_url))
 
-    token, login_error = login(api_url, username=os.getenv("LICEU_GATE_USER", "executivo_demo"), password=os.getenv("LICEU_GATE_PASSWORD", "demo123"))
-    if login_error:
-        result["missing_component"] = "SSO authentication endpoint/token provisioning"
-        result["errors"].append(login_error)
+    if not os.getenv("CANONICAL_EVENT_STORE_API_SECRET", "").strip():
+        result["missing_component"] = "CANONICAL_EVENT_STORE_API_SECRET service credential"
+        result["errors"].append("service_credential_not_provisioned")
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = service_headers()
 
     # 2) Health da interface federada
     fed_health_code, fed_health_payload = get_json(api_url, "/federation/events/health", headers=headers)

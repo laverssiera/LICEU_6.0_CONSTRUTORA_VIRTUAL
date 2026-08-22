@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     URL_ANCHOR: str = "http://anchor:8000"
     URL_JOHN_LOCAL: str = "http://john-local:8000"
     OPERA_TIMEOUT_SECONDS: float = 1.5
+    CANONICAL_EVENT_STORE_API_SECRET: str = ""
+    CANONICAL_API_ENABLED: bool = False
+    CANONICAL_API_TIMEOUT: float = 20.0
 
     DOMAIN_LICEU: str = "liceu60.com.br"
     DOMAIN_ARCHIMEDES: str = "archimedes.com.br"

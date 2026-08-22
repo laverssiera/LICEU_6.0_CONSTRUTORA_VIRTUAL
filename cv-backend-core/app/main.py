@@ -41,6 +41,7 @@ from app.core.market_duality import (
     authenticate_user,
     domain_snapshot,
     filter_market_payload,
+    get_federation_identity,
     get_current_identity,
     issue_access_token,
     require_role,
@@ -5288,7 +5289,7 @@ def create_application() -> FastAPI:
         return {"status": "ok", "items": [serialize_event(item) for item in items], "total": len(items)}
 
     @app.get("/federation/events/health")
-    def federation_events_health(identity: UserIdentity = Depends(get_current_identity)):
+    def federation_events_health(identity: UserIdentity = Depends(get_federation_identity)):
         _ensure_federation_scope(identity)
         return {
             "status": "healthy",
@@ -5298,7 +5299,7 @@ def create_application() -> FastAPI:
         }
 
     @app.get("/federation/events/config")
-    def federation_events_config(identity: UserIdentity = Depends(get_current_identity)):
+    def federation_events_config(identity: UserIdentity = Depends(get_federation_identity)):
         _ensure_federation_scope(identity)
         return {
             "consumer_configuration_variable": "CANONICAL_EVENT_STORE_API_URL",
@@ -5316,7 +5317,7 @@ def create_application() -> FastAPI:
     def federation_publish_event(
         payload: FederationEventPublishRequest,
         db: Session = Depends(get_db),
-        identity: UserIdentity = Depends(get_current_identity),
+        identity: UserIdentity = Depends(get_federation_identity),
     ):
         _ensure_federation_scope(identity)
 
@@ -5403,7 +5404,7 @@ def create_application() -> FastAPI:
         limit: int = Query(default=200, ge=1, le=2000),
         offset: int = Query(default=0, ge=0),
         db: Session = Depends(get_db),
-        identity: UserIdentity = Depends(get_current_identity),
+        identity: UserIdentity = Depends(get_federation_identity),
     ):
         _ensure_federation_scope(identity)
         events = _recent_serialized_events(db, limit=5000)
@@ -5443,7 +5444,7 @@ def create_application() -> FastAPI:
         limit: int = Query(default=200, ge=1, le=2000),
         offset: int = Query(default=0, ge=0),
         db: Session = Depends(get_db),
-        identity: UserIdentity = Depends(get_current_identity),
+        identity: UserIdentity = Depends(get_federation_identity),
     ):
         _ensure_federation_scope(identity)
         events = _filter_federation_events(
@@ -5463,7 +5464,7 @@ def create_application() -> FastAPI:
     def get_federation_event(
         event_id: str,
         db: Session = Depends(get_db),
-        identity: UserIdentity = Depends(get_current_identity),
+        identity: UserIdentity = Depends(get_federation_identity),
     ):
         _ensure_federation_scope(identity)
         item = _resolve_event_identifier(db, event_id)

@@ -276,6 +276,28 @@ def get_current_identity(
     return decode_access_token(credentials.credentials)
 
 
+def get_federation_identity(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> UserIdentity:
+    service_secret = settings.CANONICAL_EVENT_STORE_API_SECRET.strip()
+    supplied_secret = request.headers.get("X-Canonical-Service-Secret", "")
+    if supplied_secret:
+        if not service_secret or not hmac.compare_digest(supplied_secret, service_secret):
+            raise HTTPException(status_code=401, detail="Credencial de serviço inválida")
+        return UserIdentity(
+            username="canonical-service",
+            role="SUPER_ADMIN",
+            roles=["SUPER_ADMIN"],
+            display_name="Canonical Federation Service",
+            portal="service",
+            scopes=["workspace:internal", "workspace:client"],
+            monolith_access=["core_os", "econotech"],
+            exp=int(datetime.now(timezone.utc).timestamp()) + 300,
+        )
+    return get_current_identity(credentials)
+
+
 def require_scope(scope: str) -> Callable[[UserIdentity], UserIdentity]:
     def dependency(identity: UserIdentity = Depends(get_current_identity)) -> UserIdentity:
         if scope not in identity.scopes:
