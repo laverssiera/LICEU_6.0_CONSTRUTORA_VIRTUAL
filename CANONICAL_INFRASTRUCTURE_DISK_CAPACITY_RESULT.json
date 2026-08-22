@@ -8,11 +8,11 @@
   },
   "disk_after": {
     "total_gb": 31.33,
-    "used_gb": 24.37,
-    "free_gb": 5.34,
-    "free_percent": 17
+    "used_gb": 20.94,
+    "free_gb": 8.77,
+    "free_percent": 29
   },
-  "space_recovered_gb": 4.69,
+  "space_recovered_gb": 9.74,
   "docker_build_cache_cleaned": true,
   "dangling_images_cleaned": true,
   "stopped_containers_cleaned": true,

@@ -52,8 +52,10 @@ printf '  "docker_system_df": "%s"\n' "$docker_df"
 printf '}\n'
 
 if [[ "$SHOW_TOP" == "1" ]]; then
-  echo "Top workspace consumers (du -sh, top 10):"
-  du -sh /workspaces/LICEU_6.0_CONSTRUTORA_VIRTUAL/* 2>/dev/null | sort -hr | head -n 10 || true
+  {
+    echo "Top workspace consumers (du -sh, top 10):"
+    du -sh /workspaces/LICEU_6.0_CONSTRUTORA_VIRTUAL/* 2>/dev/null | sort -hr | head -n 10 || true
+  } >&2
 fi
 
 if [[ "$status" == "CRITICAL" ]]; then
