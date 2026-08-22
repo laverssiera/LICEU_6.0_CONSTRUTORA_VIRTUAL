@@ -3,7 +3,7 @@
   "timestamp": "2026-08-22T01:20:26.268201+00:00",
   "transport": "https_api",
   "canonical_store": "liceu_core_os.public.events",
-  "CANONICAL_EVENT_STORE_API_URL": "https://ominous-space-robot-pj7x5vvx6jvx26677-8010.app.github.dev",
+  "CANONICAL_EVENT_STORE_API_URL": "https://ominous-space-robot-pj7x5vvx6jvx26677-8000.app.github.dev",
   "external_api_reachable": true,
   "canonical_read_valid": true,
   "canonical_publish_valid": true,

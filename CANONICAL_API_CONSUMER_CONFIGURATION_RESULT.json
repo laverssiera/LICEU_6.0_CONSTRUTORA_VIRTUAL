@@ -1,0 +1,14 @@
+{
+  "gate": "CANONICAL_API_CONSUMER_CONFIGURATION",
+  "consumer": "ECONOTECH",
+  "external_api_url_configured": true,
+  "authentication_configured": true,
+  "secret_source": "environment|secret_store",
+  "health_valid": true,
+  "w89a_visible": true,
+  "w89b_visible": true,
+  "w90_visible": true,
+  "lineage_valid": true,
+  "audit_valid": true,
+  "status": "PASS"
+}
